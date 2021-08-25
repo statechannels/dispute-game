@@ -33,7 +33,7 @@ export class ChallengeManager {
     this.challenge = challenge;
   }
 
-  commit(commitments: StepCommitment[]): any {
+  split(commitments: StepCommitment[]): any {
     // checks
     const before = this.commitments[this.challenge.index - 1];
     const after = this.commitments[this.challenge.index];

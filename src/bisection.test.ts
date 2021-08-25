@@ -16,31 +16,31 @@ test('manual bisection', () => {
   cm.assertInvalidStep({index: 1});
   expect(cm.challenge).toEqual({index: 1});
 
-  cm.commit(commitment(incorrectStates, [0, 4, 9]));
+  cm.split(commitment(incorrectStates, [0, 4, 9]));
 
   cm.assertInvalidStep({index: 2});
 
-  expect(() => cm.commit(commitment(incorrectStates, [4, 7, 9]))).toThrowError('invalid indices');
+  expect(() => cm.split(commitment(incorrectStates, [4, 7, 9]))).toThrowError('invalid indices');
 
-  expect(() => cm.commit(commitment(incorrectStates, [4, 9]))).toThrowError(
+  expect(() => cm.split(commitment(incorrectStates, [4, 9]))).toThrowError(
     'invalid commitment length'
   );
 
-  expect(() => cm.commit(commitment(incorrectStates, [0, 2, 4]))).toThrowError(
+  expect(() => cm.split(commitment(incorrectStates, [0, 2, 4]))).toThrowError(
     'first commitment is invalid'
   );
 
-  expect(() => cm.commit(commitment(incorrectStates, [4, 6, 8]))).toThrowError(
+  expect(() => cm.split(commitment(incorrectStates, [4, 6, 8]))).toThrowError(
     'last commitment is invalid'
   );
 
-  cm.commit(commitment(incorrectStates, [4, 6, 9]));
+  cm.split(commitment(incorrectStates, [4, 6, 9]));
 
   const gasLimit = 5;
   expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
 
   cm.assertInvalidStep({index: 1});
-  cm.commit(commitment(incorrectStates, [4, 5, 6]));
+  cm.split(commitment(incorrectStates, [4, 5, 6]));
 
   expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(true);
 });
@@ -95,7 +95,7 @@ test('automatic bisection', () => {
     const last = cm.commitments[cm.challenge.index];
     const step = Math.floor((first.step + last.step) / 2);
     const middle = {root: incorrectStates[step], step};
-    cm.commit([first, middle, last]);
+    cm.split([first, middle, last]);
   }
 
   // expect(round).toEqual(4);
