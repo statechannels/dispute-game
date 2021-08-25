@@ -3,12 +3,11 @@ import _ from 'lodash';
 type Bytes32 = number;
 
 export type StepCommitment = {root: Bytes32; step: number};
-type Challenge = {index: number};
 type State = {root: Bytes32};
 type Proof = {startingAt: number; witness: State};
 
 export class ChallengeManager {
-  public challenge: Challenge = {index: 0};
+  public incorrectStepIndex = 0;
   constructor(
     public commitments: StepCommitment[],
     public progress: (state: State) => State,
@@ -19,24 +18,24 @@ export class ChallengeManager {
     }
   }
 
-  assertInvalidStep(challenge: Challenge) {
+  assertInvalidStep(index: number) {
     // checks
-    if (challenge.index == 0) {
+    if (index == 0) {
       throw 'cannot assert first step invalid';
     }
 
-    if (challenge.index > this.commitments.length - 1) {
+    if (index > this.commitments.length - 1) {
       throw 'Invalid challenge';
     }
 
     // effects
-    this.challenge = challenge;
+    this.incorrectStepIndex = index;
   }
 
   split(commitments: StepCommitment[]): any {
     // checks
-    const before = this.commitments[this.challenge.index - 1];
-    const after = this.commitments[this.challenge.index];
+    const before = this.commitments[this.incorrectStepIndex - 1];
+    const after = this.commitments[this.incorrectStepIndex];
 
     const numSplits = commitments.length - 1;
     if (numSplits < 2) {

@@ -13,12 +13,12 @@ test('manual bisection', () => {
     state => state.root
   );
 
-  cm.assertInvalidStep({index: 1});
-  expect(cm.challenge).toEqual({index: 1});
+  cm.assertInvalidStep(1);
+  expect(cm.incorrectStepIndex).toEqual(1);
 
   cm.split(commitment(incorrectStates, [0, 4, 9]));
 
-  cm.assertInvalidStep({index: 2});
+  cm.assertInvalidStep(2);
 
   expect(() => cm.split(commitment(incorrectStates, [4, 7, 9]))).toThrowError('invalid indices');
 
@@ -39,7 +39,7 @@ test('manual bisection', () => {
   const gasLimit = 5;
   expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
 
-  cm.assertInvalidStep({index: 1});
+  cm.assertInvalidStep(1);
   cm.split(commitment(incorrectStates, [4, 5, 6]));
 
   expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(true);
@@ -84,15 +84,15 @@ test('automatic bisection', () => {
       break;
     } catch (e) {
       if (e.message == 'out of gas') {
-        cm.assertInvalidStep({index: idx});
+        cm.assertInvalidStep(idx);
       } else {
         throw e;
       }
     }
 
     // the sequencer bisects
-    const first = cm.commitments[cm.challenge.index - 1];
-    const last = cm.commitments[cm.challenge.index];
+    const first = cm.commitments[cm.incorrectStepIndex - 1];
+    const last = cm.commitments[cm.incorrectStepIndex];
     const step = Math.floor((first.step + last.step) / 2);
     const middle = {root: incorrectStates[step], step};
     cm.split([first, middle, last]);
