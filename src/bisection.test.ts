@@ -36,7 +36,8 @@ test('manual bisection', () => {
 
   cm.commit(commitment(incorrectStates, [4, 6, 9]));
 
-  expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0})).toThrow('out of gas');
+  const gasLimit = 5;
+  expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
 
   cm.split({commitment: 0});
   cm.commit(commitment(incorrectStates, [4, 5, 6]));

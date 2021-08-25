@@ -14,7 +14,7 @@ export class ChallengeManager {
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32
   ) {
-    if (this.commitments.length <= 2) {
+    if (this.commitments.length < 2) {
       throw 'invalid commitment length';
     }
   }
