@@ -3,12 +3,12 @@ import _ from 'lodash';
 type Bytes32 = number;
 
 export type StepCommitment = {root: Bytes32; step: number};
-type Challenge = {commitment: number};
+type Challenge = {index: number};
 type State = {root: Bytes32};
 type Proof = {startingAt: number; witness: State};
 
 export class ChallengeManager {
-  public challenge: Challenge = {commitment: 0};
+  public challenge: Challenge = {index: 0};
   constructor(
     public commitments: StepCommitment[],
     public progress: (state: State) => State,
@@ -19,9 +19,13 @@ export class ChallengeManager {
     }
   }
 
-  split(challenge: Challenge) {
+  assertInvalidStep(challenge: Challenge) {
     // checks
-    if (challenge.commitment > this.commitments.length - 1) {
+    if (challenge.index == 0) {
+      throw 'cannot assert first step invalid';
+    }
+
+    if (challenge.index > this.commitments.length - 1) {
       throw 'Invalid challenge';
     }
 
@@ -31,8 +35,8 @@ export class ChallengeManager {
 
   commit(commitments: StepCommitment[]): any {
     // checks
-    const before = this.commitments[this.challenge.commitment];
-    const after = this.commitments[this.challenge.commitment + 1];
+    const before = this.commitments[this.challenge.index - 1];
+    const after = this.commitments[this.challenge.index];
 
     const numSplits = commitments.length - 1;
     if (numSplits < 2) {
@@ -62,7 +66,7 @@ export class ChallengeManager {
     this.commitments = commitments;
   }
 
-  detectFraud({witness, startingAt}: Proof, gasLimit = 9000): boolean {
+  detectFraud({witness, startingAt}: Proof, gasLimit = 1): boolean {
     const before = this.commitments[startingAt];
     const after = this.commitments[startingAt + 1];
 
