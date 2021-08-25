@@ -17,5 +17,8 @@
   "dependencies": {
     "ethers": "^5.4.5",
     "lodash": "^4.17.21"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }
