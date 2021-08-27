@@ -16,7 +16,7 @@ type MachineState {
 }
 ```
 
-MachineState is a
+(MachineState is assumed to be a Merkle tree, thus the `root` property.)
 
 We force the sequencer to post `S_0.root`, where `S_0 = {chainState: R, memory: emptyMemory, instructions: dissassemble(transactions)}` . The challenger contract must validate that `R` is equal to `R` posted for normal operation rollup. In addition, the challenger contract must validate that `dissassemble(transaction)` is correct. These validations are currently out of scope. We also force the sequencer to post `S'.root`, where `S' = {chainState: R', memory: emptyMemory, instructions: emptyInstructions}` . We might force the sequencer to post additional intermediate states.
 
@@ -43,7 +43,7 @@ In the event of a validator disputing a sequencer-posted state root, the "bisect
 
 **Comment:** This seems different from the game played in the Arbitrum contract. In an Arbitrum challenge, the proposer seems to initially commit to the root of a Merkle tree formed from the [entire execution trace](https://github.com/OffchainLabs/arbitrum/blob/41858dc49be854188ec821ed956e767db1e617a9/packages/arb-bridge-eth/contracts/challenge/Challenge.sol#L126). A path down that tree is [revealed by the proposer](https://github.com/OffchainLabs/arbitrum/blob/41858dc49be854188ec821ed956e767db1e617a9/packages/arb-bridge-eth/contracts/challenge/Challenge.sol#L189-L194). Thus, `Challenge.sol` seems to require the sequencer and challenger to hash every machine state up front, while this design allows the sequencer to hash machine states that are committed to on-chain.
 
-Working prototype code can be found [here](https://github.com/statechannels/bisection-game), written in Typescript.
+Working prototype code can be found in [this repo](src/bisection.ts)), written in Typescript.
 
 ## Initializing a challenge
 
