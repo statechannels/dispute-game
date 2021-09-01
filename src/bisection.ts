@@ -6,12 +6,15 @@ export type StepCommitment = {root: Bytes32; step: number};
 type State = {root: Bytes32};
 type Proof = {startingAt: number; witness: State};
 
+// When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
   public incorrectStepIndex = 0;
   constructor(
+    // These commitments are supplied by the challenger
     public commitments: StepCommitment[],
     public progress: (state: State) => State,
-    public fingerprint: (state: State) => Bytes32
+    public fingerprint: (state: State) => Bytes32,
+    public lastSubmitter: string
   ) {
     if (this.commitments.length < 2) {
       throw 'invalid commitment length';
@@ -20,7 +23,7 @@ export class ChallengeManager {
 
   assertInvalidStep(index: number) {
     // checks
-    if (index == 0) {
+    if (index === 0) {
       throw 'cannot assert first step invalid';
     }
 
@@ -32,37 +35,46 @@ export class ChallengeManager {
     this.incorrectStepIndex = index;
   }
 
-  split(commitments: StepCommitment[]): any {
-    // checks
-    const before = this.commitments[this.incorrectStepIndex - 1];
-    const after = this.commitments[this.incorrectStepIndex];
-
+  split(commitments: StepCommitment[], lastSubmitter: string): any {
     const numSplits = commitments.length - 1;
     if (numSplits < 2) {
       throw 'invalid commitment length';
     }
 
-    const first = commitments[0];
-    const last = commitments[numSplits];
-
-    if (!_.isEqual(first, before)) {
-      throw 'first commitment is invalid';
+    // Find the first stored commitment with the step smaller than the first split commitment
+    const consensusIndex =
+      this.commitments
+        .map(commitment => commitment.step)
+        .findIndex(step => step > commitments[0].step) - 1;
+    if (consensusIndex < 0 || consensusIndex === this.commitments.length - 1) {
+      throw 'The first commitment step is too large';
     }
 
-    if (!_.isEqual(last, after)) {
-      throw 'last commitment is invalid';
+    const consensusCommitment = this.commitments[consensusIndex];
+    const disputedCommitment = this.commitments[consensusIndex + 1];
+    if (disputedCommitment.step <= commitments[commitments.length - 1].step) {
+      throw 'The last commitment step is too large';
     }
 
-    for (let i = 0; i < numSplits; i++) {
-      const {step} = commitments[i];
-      const expectedStep = first.step + Math.floor((i * (last.step - first.step)) / numSplits);
-      if (step !== Math.floor(expectedStep)) {
-        throw 'invalid indices';
-      }
+    const validIndeces = commitments
+      .map(commitments => commitments.step)
+      .every((step, index, steps) => {
+        const expectedStep =
+          consensusCommitment.step +
+          Math.floor((index * (disputedCommitment.step - consensusCommitment.step)) / numSplits);
+        if (step !== Math.floor(expectedStep)) {
+          return false;
+        }
+        return true;
+      });
+
+    if (!validIndeces) {
+      throw 'Invalid indices';
     }
 
     // effects
-    this.commitments = commitments;
+    this.lastSubmitter = lastSubmitter;
+    this.commitments = [this.commitments[consensusIndex], ...commitments, disputedCommitment];
   }
 
   detectFraud({witness, startingAt}: Proof, gasLimit = 1): boolean {

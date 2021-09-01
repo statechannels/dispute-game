@@ -6,11 +6,15 @@ function commitment(states: number[], indices: number[]): StepCommitment[] {
 }
 
 test('manual bisection', () => {
+  const challengerId = 'challenger';
+  const proposerId = 'proposer';
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
+  const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const cm = new ChallengeManager(
-    commitment(incorrectStates, [0, 9]),
+    commitment(correctStates, [0, 9]),
     state => ({root: state.root + 1}),
-    state => state.root
+    state => state.root,
+    challengerId
   );
 
   cm.assertInvalidStep(1);
