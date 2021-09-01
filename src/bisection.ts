@@ -10,7 +10,9 @@ type Proof = {startingAt: number; witness: State};
 export class ChallengeManager {
   constructor(
     // These commitments are supplied by the challenger
-    public commitments: StepCommitment[],
+    public commitments: Bytes32[],
+    public low = 0,
+    public high: number,
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32,
     public lastSubmitter: string
@@ -20,41 +22,25 @@ export class ChallengeManager {
     }
   }
 
-  split(commitments: StepCommitment[], lastSubmitter: string): any {
+  split(commitments: Bytes32[], consensusIndex: number, lastSubmitter: string): any {
     if (!commitments.length) {
       throw 'invalid commitment length';
     }
-    const numSplits = commitments.length + 1;
-
-    // Find the first stored commitment with the step smaller than the first split commitment
-    const consensusIndex =
-      this.commitments
-        .map(commitment => commitment.step)
-        .findIndex(step => step > commitments[0].step) - 1;
-    if (consensusIndex < 0 || consensusIndex === this.commitments.length - 1) {
-      throw 'The first commitment step is too large';
-    }
+    const numSplits = commitments.length;
 
     const consensusCommitment = this.commitments[consensusIndex];
     const disputedCommitment = this.commitments[consensusIndex + 1];
 
-    const validIndices = commitments
-      .map(commitments => commitments.step)
-      .every((step, index) => {
-        const expectedStep =
-          consensusCommitment.step +
-          Math.floor(
-            ((index + 1) * (disputedCommitment.step - consensusCommitment.step)) / numSplits
-          );
-        if (step !== Math.floor(expectedStep)) {
-          return false;
-        }
-        return true;
-      });
-
-    if (!validIndices) {
-      throw 'Invalid indices';
+    if (commitments[numSplits - 1] == disputedCommitment) {
+      throw 'must disagree with the disputed commitment';
     }
+
+    this.commitments = [consensusCommitment].concat(commitments);
+
+    // ugly math
+    const diff = this.high - this.low;
+    this.low = this.low + consensusIndex * numSplits;
+    this.high = this.low + Math.floor(diff / numSplits);
 
     // effects
     this.lastSubmitter = lastSubmitter;
@@ -65,22 +51,14 @@ export class ChallengeManager {
     const before = this.commitments[startingAt];
     const after = this.commitments[startingAt + 1];
 
-    if (before.root !== witness.root) {
+    if (this.high - this.low > this.commitments.length - 1) {
+      throw 'k-section incomplete';
+    }
+
+    if (before !== witness.root) {
       return false;
     }
 
-    let gasUsed = 0;
-    for (let i = 0; i < after.step - before.step; i++) {
-      gasUsed += witness.root;
-      witness = this.progress(witness);
-    }
-
-    // Simulate running out of gas
-    // The assumption here is that a single step can _always_ be validated on-chain.
-    if (after.step - before.step > 1 && gasUsed > gasLimit) {
-      throw new Error('out of gas');
-    }
-
-    return after.root !== witness.root;
+    return after !== witness.root;
   }
 }
