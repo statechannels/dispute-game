@@ -1,11 +1,40 @@
 import {ChallengeManager, StepCommitment} from './bisection';
 import _ from 'lodash';
 
+const challengerId = 'challenger';
+const proposerId = 'proposer';
+
 function commitment(states: number[], indices: number[]): StepCommitment[] {
   return indices.map(step => ({root: states[step], step}));
 }
 
 test('manual bisection', () => {
+  const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
+  const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const cm = new ChallengeManager(
+    commitment(correctStates, [0, 9]),
+    state => ({root: state.root + 1}),
+    state => state.root,
+    challengerId
+  );
+
+  cm.split(commitment(incorrectStates, [4]), proposerId);
+  expect(() => cm.split(commitment(correctStates, [5]), challengerId)).toThrowError(
+    'Invalid indices'
+  );
+  expect(() => cm.split(commitment(correctStates, [9]), challengerId)).toThrowError(
+    'The first commitment step is too large'
+  );
+
+  cm.split(commitment(correctStates, [6]), challengerId);
+  const gasLimit = 5;
+  expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
+  cm.split(commitment(incorrectStates, [5]), proposerId);
+
+  expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(true);
+});
+
+test('manual tri-section', () => {
   const challengerId = 'challenger';
   const proposerId = 'proposer';
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
@@ -17,36 +46,9 @@ test('manual bisection', () => {
     challengerId
   );
 
-  cm.assertInvalidStep(1);
-  expect(cm.incorrectStepIndex).toEqual(1);
-
-  cm.split(commitment(incorrectStates, [0, 4, 9]));
-
-  cm.assertInvalidStep(2);
-
-  expect(() => cm.split(commitment(incorrectStates, [4, 7, 9]))).toThrowError('invalid indices');
-
-  expect(() => cm.split(commitment(incorrectStates, [4, 9]))).toThrowError(
-    'invalid commitment length'
-  );
-
-  expect(() => cm.split(commitment(incorrectStates, [0, 2, 4]))).toThrowError(
-    'first commitment is invalid'
-  );
-
-  expect(() => cm.split(commitment(incorrectStates, [4, 6, 8]))).toThrowError(
-    'last commitment is invalid'
-  );
-
-  cm.split(commitment(incorrectStates, [4, 6, 9]));
-
-  const gasLimit = 5;
-  expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
-
-  cm.assertInvalidStep(1);
-  cm.split(commitment(incorrectStates, [4, 5, 6]));
-
-  expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(true);
+  cm.split(commitment(incorrectStates, [3, 6]), proposerId);
+  cm.split(commitment(correctStates, [4, 5]), challengerId);
+  expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(false);
 });
 
 test('automatic bisection', () => {

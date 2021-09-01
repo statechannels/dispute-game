@@ -8,7 +8,6 @@ type Proof = {startingAt: number; witness: State};
 
 // When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
-  public incorrectStepIndex = 0;
   constructor(
     // These commitments are supplied by the challenger
     public commitments: StepCommitment[],
@@ -21,25 +20,11 @@ export class ChallengeManager {
     }
   }
 
-  assertInvalidStep(index: number) {
-    // checks
-    if (index === 0) {
-      throw 'cannot assert first step invalid';
-    }
-
-    if (index > this.commitments.length - 1) {
-      throw 'Invalid challenge';
-    }
-
-    // effects
-    this.incorrectStepIndex = index;
-  }
-
   split(commitments: StepCommitment[], lastSubmitter: string): any {
-    const numSplits = commitments.length - 1;
-    if (numSplits < 2) {
+    if (!commitments.length) {
       throw 'invalid commitment length';
     }
+    const numSplits = commitments.length + 1;
 
     // Find the first stored commitment with the step smaller than the first split commitment
     const consensusIndex =
@@ -52,23 +37,22 @@ export class ChallengeManager {
 
     const consensusCommitment = this.commitments[consensusIndex];
     const disputedCommitment = this.commitments[consensusIndex + 1];
-    if (disputedCommitment.step <= commitments[commitments.length - 1].step) {
-      throw 'The last commitment step is too large';
-    }
 
-    const validIndeces = commitments
+    const validIndices = commitments
       .map(commitments => commitments.step)
-      .every((step, index, steps) => {
+      .every((step, index) => {
         const expectedStep =
           consensusCommitment.step +
-          Math.floor((index * (disputedCommitment.step - consensusCommitment.step)) / numSplits);
+          Math.floor(
+            ((index + 1) * (disputedCommitment.step - consensusCommitment.step)) / numSplits
+          );
         if (step !== Math.floor(expectedStep)) {
           return false;
         }
         return true;
       });
 
-    if (!validIndeces) {
+    if (!validIndices) {
       throw 'Invalid indices';
     }
 
