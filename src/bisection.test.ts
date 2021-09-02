@@ -1,54 +1,57 @@
-import {ChallengeManager, StepCommitment} from './bisection';
+import {ChallengeManager, State} from './bisection';
 import _ from 'lodash';
 
 const challengerId = 'challenger';
 const proposerId = 'proposer';
 
-function commitment(states: number[], indices: number[]): StepCommitment[] {
-  return indices.map(step => ({root: states[step], step}));
+function states(states: number[], indices: number[]): State[] {
+  return indices.map(step => ({root: states[step]}));
+}
+
+function state(states: number[], index: number): State {
+  return {root: states[index]};
 }
 
 test('manual bisection', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const cm = new ChallengeManager(
-    commitment(correctStates, [0, 9]),
+    states(correctStates, [0, 4, 9]),
     state => ({root: state.root + 1}),
     state => state.root,
-    challengerId
+    challengerId,
+    9,
+    2
   );
 
-  cm.split(commitment(incorrectStates, [4]), proposerId);
-  expect(() => cm.split(commitment(correctStates, [5]), challengerId)).toThrowError(
-    'Invalid indices'
-  );
-  expect(() => cm.split(commitment(correctStates, [9]), challengerId)).toThrowError(
-    'The first commitment step is too large'
-  );
+  cm.split(state(incorrectStates, 4), states(incorrectStates, [6]), proposerId);
 
-  cm.split(commitment(correctStates, [6]), challengerId);
-  const gasLimit = 5;
-  expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
-  cm.split(commitment(incorrectStates, [5]), proposerId);
+  // expect(() =>
+  //   cm.split(state(correctStates, 9), states(correctStates, [9]), challengerId)
+  // ).toThrowError('Consensus witness cannot be the last stored state');
 
-  expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(true);
+  cm.split(state(correctStates, 4), states(correctStates, [5]), challengerId);
+
+  // const gasLimit = 5;
+  // expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
+
+  expect(cm.detectFraud({witness: {root: 4}})).toBe(false);
 });
 
 test('manual tri-section', () => {
-  const challengerId = 'challenger';
-  const proposerId = 'proposer';
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const cm = new ChallengeManager(
-    commitment(correctStates, [0, 9]),
+    states(correctStates, [0, 3, 6, 9]),
     state => ({root: state.root + 1}),
     state => state.root,
-    challengerId
+    challengerId,
+    9,
+    3
   );
 
-  cm.split(commitment(incorrectStates, [3, 6]), proposerId);
-  cm.split(commitment(correctStates, [4, 5]), challengerId);
-  expect(cm.detectFraud({witness: {root: 4}, startingAt: 0})).toBe(false);
+  cm.split(state(incorrectStates, 3), states(incorrectStates, [4, 5]), proposerId);
+  expect(cm.detectFraud({witness: {root: 4}})).toBe(true);
 });
 
 // test('automatic bisection', () => {

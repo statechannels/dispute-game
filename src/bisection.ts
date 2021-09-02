@@ -2,85 +2,74 @@ import _ from 'lodash';
 
 type Bytes32 = number;
 
-export type StepCommitment = {root: Bytes32; step: number};
-type State = {root: Bytes32};
-type Proof = {startingAt: number; witness: State};
+export type State = {root: Bytes32};
+type Proof = {witness: State};
 
 // When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
+  public consensusStep = 0;
   constructor(
-    // These commitments are supplied by the challenger
-    public commitments: StepCommitment[],
+    // These states are supplied by the challenger
+    public states: State[],
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32,
-    public lastSubmitter: string
+    public lastSubmitter: string,
+    public highestStep: number,
+    public numSplits: number
   ) {
-    if (this.commitments.length < 2) {
-      throw 'invalid commitment length';
+    if (this.states.length !== numSplits + 1) {
+      throw `Expected ${numSplits + 1} number of states, recieved ${states.length}`;
     }
   }
 
-  split(commitments: StepCommitment[], lastSubmitter: string): any {
-    if (!commitments.length) {
-      throw 'invalid commitment length';
-    }
-    const numSplits = commitments.length + 1;
+  private interval(): number {
+    const stepsBetweenConsensusAndHighest = this.highestStep - this.consensusStep;
+    return stepsBetweenConsensusAndHighest / this.numSplits;
+  }
 
-    // Find the first stored commitment with the step smaller than the first split commitment
-    const consensusIndex =
-      this.commitments
-        .map(commitment => commitment.step)
-        .findIndex(step => step > commitments[0].step) - 1;
-    if (consensusIndex < 0 || consensusIndex === this.commitments.length - 1) {
-      throw 'The first commitment step is too large';
-    }
+  private expectedNumStates(): number {
+    return this.interval() >= 1 ? this.numSplits - 1 : this.highestStep - this.consensusStep;
+  }
 
-    const consensusCommitment = this.commitments[consensusIndex];
-    const disputedCommitment = this.commitments[consensusIndex + 1];
-
-    const validIndices = commitments
-      .map(commitments => commitments.step)
-      .every((step, index) => {
-        const expectedStep =
-          consensusCommitment.step +
-          Math.floor(
-            ((index + 1) * (disputedCommitment.step - consensusCommitment.step)) / numSplits
-          );
-        if (step !== Math.floor(expectedStep)) {
-          return false;
-        }
-        return true;
-      });
-
-    if (!validIndices) {
-      throw 'Invalid indices';
+  // TODO: consensusWitness will be merkle tree witness
+  split(consensusWitness: State, states: State[], lastSubmitter: string): any {
+    if (states.length !== this.expectedNumStates()) {
+      throw `Expected ${this.expectedNumStates()} number of states, recieved ${states.length}`;
     }
 
-    // effects
+    const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
+
+    if (consensusIndex < 0) {
+      throw 'Consensus witness is not in the stored states';
+    }
+
+    if (consensusIndex === this.numSplits) {
+      throw 'Consensus witness cannot be the last stored state';
+    }
+
+    const newConsensusStep = this.consensusStep + Math.floor(consensusIndex * this.interval());
+    // Effects
+
+    // The else case is when the consensus state is the second to last state in the state list.
+    // In that case, the highest step not need to be updated.
+    if (consensusIndex !== this.numSplits - 1) {
+      this.highestStep = Math.floor(newConsensusStep + this.interval());
+    }
+    this.consensusStep = newConsensusStep;
+    this.states = [this.states[consensusIndex], ...states, this.states[consensusIndex + 1]];
     this.lastSubmitter = lastSubmitter;
-    this.commitments = [this.commitments[consensusIndex], ...commitments, disputedCommitment];
   }
 
-  detectFraud({witness, startingAt}: Proof, gasLimit = 1): boolean {
-    const before = this.commitments[startingAt];
-    const after = this.commitments[startingAt + 1];
-
-    if (before.root !== witness.root) {
-      return false;
+  detectFraud({witness}: Proof, gasLimit = 1): boolean {
+    const witnessIndex = this.states.findIndex(state => state.root === witness.root);
+    if (witnessIndex < 0) {
+      throw 'Witness cannot be found in stored states';
+    }
+    if (witnessIndex === this.states.length - 1) {
+      throw 'Witness cannot be the last state';
     }
 
-    let gasUsed = 0;
-    for (let i = 0; i < after.step - before.step; i++) {
-      gasUsed += witness.root;
-      witness = this.progress(witness);
-    }
-
-    // Simulate running out of gas
-    // The assumption here is that a single step can _always_ be validated on-chain.
-    if (after.step - before.step > 1 && gasUsed > gasLimit) {
-      throw new Error('out of gas');
-    }
-
-    return after.root !== witness.root;
+    const correctWitnessAfter = this.progress(witness);
+    return correctWitnessAfter.root !== this.states[witnessIndex + 1].root;
   }
 }
