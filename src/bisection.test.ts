@@ -24,17 +24,36 @@ test('manual bisection', () => {
     2
   );
 
-  cm.split(state(incorrectStates, 4), states(incorrectStates, [6]), proposerId);
+  cm.split(
+    state(incorrectStates, 4),
+    states(incorrectStates, [6]),
+    state(correctStates, 9),
+    proposerId
+  );
 
-  // expect(() =>
-  //   cm.split(state(correctStates, 9), states(correctStates, [9]), challengerId)
-  // ).toThrowError('Consensus witness cannot be the last stored state');
+  expect(() =>
+    cm.split(
+      state(correctStates, 9),
+      states(correctStates, [9]),
+      state(incorrectStates, 9),
+      challengerId
+    )
+  ).toThrowError('Consensus witness cannot be the last stored state');
+  expect(() =>
+    cm.split(
+      state(correctStates, 1),
+      states(correctStates, [2]),
+      state(incorrectStates, 9),
+      challengerId
+    )
+  ).toThrowError('Consensus witness is not in the stored states');
 
-  cm.split(state(correctStates, 4), states(correctStates, [5]), challengerId);
-
-  // const gasLimit = 5;
-  // expect(() => cm.detectFraud({witness: {root: 4}, startingAt: 0}, gasLimit)).toThrow('out of gas');
-
+  cm.split(
+    state(correctStates, 4),
+    states(correctStates, [5]),
+    state(incorrectStates, 6),
+    challengerId
+  );
   expect(cm.detectFraud({witness: {root: 4}})).toBe(false);
 });
 
@@ -50,7 +69,12 @@ test('manual tri-section', () => {
     3
   );
 
-  cm.split(state(incorrectStates, 3), states(incorrectStates, [4, 5]), proposerId);
+  cm.split(
+    state(incorrectStates, 3),
+    states(incorrectStates, [4, 5]),
+    state(correctStates, 6),
+    proposerId
+  );
   expect(cm.detectFraud({witness: {root: 4}})).toBe(true);
 });
 
@@ -61,10 +85,12 @@ test('manual tri-section', () => {
 //     _.range(60, 90).map(i => i + 0.1)
 //   );
 //   const cm = new ChallengeManager(
-//     commitment(incorrectStates, [0, 49, 89]),
+//     states(incorrectStates, [0, 49, 89]),
 //     state => ({root: state.root + 1}),
 //     state => state.root,
-//     challengerId
+//     challengerId,
+//     89,
+//     2
 //   );
 
 //   const validatedSteps: StepCommitment[] = correctStates.map(step => ({root: step, step}));
@@ -72,7 +98,7 @@ test('manual tri-section', () => {
 //   function firstIncorrectStep() {
 //     let i = 0;
 //     while (true) {
-//       const committedStep = cm.commitments[i];
+//       const committedStep = cm.states[i];
 //       const correctRoot = validatedSteps[committedStep.step].root;
 //       if (committedStep.root == correctRoot) {
 //         i += 1;

@@ -9,7 +9,8 @@ type Proof = {witness: State};
 export class ChallengeManager {
   public consensusStep = 0;
   constructor(
-    // These states are supplied by the challenger
+    // These states are supplied by the challenger.
+    // In the future, only the hash of the merkle root will be stored
     public states: State[],
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32,
@@ -27,36 +28,64 @@ export class ChallengeManager {
     return stepsBetweenConsensusAndHighest / this.numSplits;
   }
 
-  private expectedNumStates(): number {
-    return this.interval() >= 1 ? this.numSplits - 1 : this.highestStep - this.consensusStep;
+  /**
+   * When states are stored in a Merkle tree, this function calculates the number of leaves we expect.
+   */
+  private expectedNumOfLeaves(consensusStep: number, highestStep: number): number {
+    return this.interval() >= 1 ? this.numSplits + 1 : highestStep - consensusStep + 1;
   }
 
-  // TODO: consensusWitness will be merkle tree witness
-  split(consensusWitness: State, states: State[], lastSubmitter: string): any {
-    if (states.length !== this.expectedNumStates()) {
-      throw `Expected ${this.expectedNumStates()} number of states, recieved ${states.length}`;
+  public stepForIndex(index: number): number {
+    if (index < 0 || index >= this.expectedNumOfLeaves(this.consensusStep, this.highestStep)) {
+      throw 'Invalid index';
     }
+    if (index === this.expectedNumOfLeaves(this.consensusStep, this.highestStep) - 1) {
+      return this.highestStep;
+    }
+    const stepDelta = this.interval() > 1 ? this.interval() : 1;
+    return this.consensusStep + Math.floor(stepDelta * index);
+  }
 
+  // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
+  split(
+    consensusWitness: State,
+    states: State[],
+    disputedWitness: State,
+    lastSubmitter: string
+  ): any {
+    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
     const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
-
     if (consensusIndex < 0) {
       throw 'Consensus witness is not in the stored states';
     }
-
     if (consensusIndex === this.numSplits) {
       throw 'Consensus witness cannot be the last stored state';
     }
 
-    const newConsensusStep = this.consensusStep + Math.floor(consensusIndex * this.interval());
+    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
+    if (this.states[consensusIndex + 1].root !== disputedWitness.root) {
+      throw 'Disputed witness does not match';
+    }
+
+    const newConsensusStep = this.stepForIndex(consensusIndex);
     // Effects
 
     // The else case is when the consensus state is the second to last state in the state list.
     // In that case, the highest step not need to be updated.
+    let newHighestStep = this.highestStep;
     if (consensusIndex !== this.numSplits - 1) {
-      this.highestStep = Math.floor(newConsensusStep + this.interval());
+      newHighestStep = Math.floor(newConsensusStep + this.interval());
     }
+
+    // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller + disputedWitness
+    const intermediateLeaves = this.expectedNumOfLeaves(newConsensusStep, newHighestStep) - 2;
+    if (states.length !== intermediateLeaves) {
+      throw `Expected ${intermediateLeaves} number of states, recieved ${states.length}`;
+    }
+
     this.consensusStep = newConsensusStep;
-    this.states = [this.states[consensusIndex], ...states, this.states[consensusIndex + 1]];
+    this.highestStep = newHighestStep;
+    this.states = [consensusWitness, ...states, disputedWitness];
     this.lastSubmitter = lastSubmitter;
   }
 
