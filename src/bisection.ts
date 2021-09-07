@@ -23,36 +23,41 @@ export class ChallengeManager {
     }
   }
 
-  private interval(): number {
-    const stepsBetweenConsensusAndHighest = this.highestStep - this.consensusStep;
+  private interval(consensusStep = this.consensusStep, highestStep = this.highestStep): number {
+    const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
     return stepsBetweenConsensusAndHighest / this.numSplits;
   }
 
   /**
    * When states are stored in a Merkle tree, this function calculates the number of leaves we expect.
    */
-  private expectedNumOfLeaves(consensusStep: number, highestStep: number): number {
-    return this.interval() >= 1 ? this.numSplits + 1 : highestStep - consensusStep + 1;
+  public expectedNumOfLeaves(consensusStep: number, highestStep: number): number {
+    return this.interval(consensusStep, highestStep) >= 1
+      ? this.numSplits + 1
+      : highestStep - consensusStep + 1;
   }
 
-  public stepForIndex(index: number): number {
-    if (index < 0 || index >= this.expectedNumOfLeaves(this.consensusStep, this.highestStep)) {
+  public stepForIndex(
+    index: number,
+    consensusStep: number = this.consensusStep,
+    highestStep: number = this.highestStep
+  ): number {
+    if (index < 0 || index >= this.expectedNumOfLeaves(consensusStep, highestStep)) {
       throw 'Invalid index';
     }
-    if (index === this.expectedNumOfLeaves(this.consensusStep, this.highestStep) - 1) {
-      return this.highestStep;
+    if (index === this.expectedNumOfLeaves(consensusStep, highestStep) - 1) {
+      return highestStep;
     }
-    const stepDelta = this.interval() > 1 ? this.interval() : 1;
-    return this.consensusStep + Math.floor(stepDelta * index);
+    const stepDelta =
+      this.interval(consensusStep, highestStep) > 1 ? this.interval(consensusStep, highestStep) : 1;
+    return consensusStep + Math.floor(stepDelta * index);
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(
-    consensusWitness: State,
-    states: State[],
-    disputedWitness: State,
-    lastSubmitter: string
-  ): any {
+  split(consensusWitness: State, states: State[], lastSubmitter: string): any {
+    if (this.interval() <= 1) {
+      throw new Error('States cannot be split further');
+    }
     // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
     const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
     if (consensusIndex < 0) {
@@ -62,13 +67,7 @@ export class ChallengeManager {
       throw 'Consensus witness cannot be the last stored state';
     }
 
-    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
-    if (this.states[consensusIndex + 1].root !== disputedWitness.root) {
-      throw 'Disputed witness does not match';
-    }
-
     const newConsensusStep = this.stepForIndex(consensusIndex);
-    // Effects
 
     // The else case is when the consensus state is the second to last state in the state list.
     // In that case, the highest step not need to be updated.
@@ -77,19 +76,22 @@ export class ChallengeManager {
       newHighestStep = Math.floor(newConsensusStep + this.interval());
     }
 
-    // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller + disputedWitness
-    const intermediateLeaves = this.expectedNumOfLeaves(newConsensusStep, newHighestStep) - 2;
+    // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
+    const intermediateLeaves = this.expectedNumOfLeaves(newConsensusStep, newHighestStep) - 1;
     if (states.length !== intermediateLeaves) {
       throw `Expected ${intermediateLeaves} number of states, recieved ${states.length}`;
     }
 
+    // Effects
     this.consensusStep = newConsensusStep;
     this.highestStep = newHighestStep;
-    this.states = [consensusWitness, ...states, disputedWitness];
+    this.states = [consensusWitness, ...states];
     this.lastSubmitter = lastSubmitter;
   }
 
-  detectFraud({witness}: Proof, gasLimit = 1): boolean {
+  detectFraud({witness}: Proof): boolean {
+    if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
+
     const witnessIndex = this.states.findIndex(state => state.root === witness.root);
     if (witnessIndex < 0) {
       throw 'Witness cannot be found in stored states';

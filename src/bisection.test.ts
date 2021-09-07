@@ -1,8 +1,9 @@
 import {ChallengeManager, State} from './bisection';
 import _ from 'lodash';
 
-const challengerId = 'challenger';
-const proposerId = 'proposer';
+type Role = 'challenger' | 'proposer';
+const challengerId = 'challenger' as const;
+const proposerId = 'proposer' as const;
 
 function states(states: number[], indices: number[]): State[] {
   return indices.map(step => ({root: states[step]}));
@@ -24,36 +25,16 @@ test('manual bisection', () => {
     2
   );
 
-  cm.split(
-    state(incorrectStates, 4),
-    states(incorrectStates, [6]),
-    state(correctStates, 9),
-    proposerId
-  );
+  cm.split(state(incorrectStates, 4), states(incorrectStates, [6, 9]), proposerId);
 
   expect(() =>
-    cm.split(
-      state(correctStates, 9),
-      states(correctStates, [9]),
-      state(incorrectStates, 9),
-      challengerId
-    )
+    cm.split(state(incorrectStates, 9), states(correctStates, [9]), challengerId)
   ).toThrowError('Consensus witness cannot be the last stored state');
   expect(() =>
-    cm.split(
-      state(correctStates, 1),
-      states(correctStates, [2]),
-      state(incorrectStates, 9),
-      challengerId
-    )
+    cm.split(state(correctStates, 1), states(correctStates, [2, 9]), challengerId)
   ).toThrowError('Consensus witness is not in the stored states');
 
-  cm.split(
-    state(correctStates, 4),
-    states(correctStates, [5]),
-    state(incorrectStates, 6),
-    challengerId
-  );
+  cm.split(state(correctStates, 4), states(correctStates, [5, 6]), challengerId);
   expect(cm.detectFraud({witness: {root: 4}})).toBe(false);
 });
 
@@ -69,76 +50,96 @@ test('manual tri-section', () => {
     3
   );
 
-  cm.split(
-    state(incorrectStates, 3),
-    states(incorrectStates, [4, 5]),
-    state(correctStates, 6),
-    proposerId
-  );
+  cm.split(state(incorrectStates, 3), states(incorrectStates, [4, 5, 6]), proposerId);
   expect(cm.detectFraud({witness: {root: 4}})).toBe(true);
 });
 
-// test('automatic bisection', () => {
-//   const correctStates = _.range(100);
-//   const incorrectStates = _.concat(
-//     _.range(60),
-//     _.range(60, 90).map(i => i + 0.1)
-//   );
-//   const cm = new ChallengeManager(
-//     states(incorrectStates, [0, 49, 89]),
-//     state => ({root: state.root + 1}),
-//     state => state.root,
-//     challengerId,
-//     89,
-//     2
-//   );
+class AutomaticDisputer {
+  private cm: ChallengeManager;
+  private role: Role = 'proposer';
+  constructor(
+    public numSplits: number = 2,
+    public initialIndices: number[] = [0, 44, 89],
+    public correctStates = _.range(100),
+    public incorrectStates = _.concat(
+      _.range(60),
+      _.range(60, 90).map(i => i + 0.1)
+    )
+  ) {
+    this.cm = new ChallengeManager(
+      states(this.incorrectStates, initialIndices),
+      state => ({root: state.root + 1}),
+      state => state.root,
+      this.role,
+      89,
+      this.numSplits
+    );
+  }
+  private myStates(): State[] {
+    const states = this.role === 'challenger' ? this.correctStates : this.incorrectStates;
+    return states.map(state => ({
+      root: state
+    }));
+  }
 
-//   const validatedSteps: StepCommitment[] = correctStates.map(step => ({root: step, step}));
+  private firstDisputedIndex(): number {
+    for (let i = 0; i < this.cm.states.length; i++) {
+      const step = this.cm.stepForIndex(i);
+      if (this.cm.states[i].root !== this.myStates()[step].root) {
+        return i;
+      }
+    }
+    throw 'Did not find disputed state';
+  }
 
-//   function firstIncorrectStep() {
-//     let i = 0;
-//     while (true) {
-//       const committedStep = cm.states[i];
-//       const correctRoot = validatedSteps[committedStep.step].root;
-//       if (committedStep.root == correctRoot) {
-//         i += 1;
-//       } else {
-//         return i;
-//       }
-//     }
-//   }
+  private switchRole() {
+    if (this.role === 'challenger') {
+      this.role = 'proposer';
+    } else {
+      this.role = 'challenger';
+    }
+  }
 
-//   let round;
-//   for (round = 0; round < 10; round++) {
-//     // the verifier posts the last correct commitment
-//     const idx = firstIncorrectStep();
-//     const lastCorrectStep = cm.commitments[idx - 1];
-//     try {
-//       expect(
-//         cm.detectFraud({witness: {root: lastCorrectStep.root}, startingAt: idx - 1}, 200)
-//       ).toBeTruthy();
-//       break;
-//     } catch (e) {
-//       if (e.message == 'out of gas') {
-//         cm.assertInvalidStep(idx);
-//       } else {
-//         throw e;
-//       }
-//     }
+  public initializeAndDispute(
+    expectedStates = [{root: 58}, {root: 59}, {root: 60.1}],
+    expectedFraud = true
+  ) {
+    this.switchRole();
+    for (let round = 0; round < 10; round++) {
+      const disagreeWithIndex = this.firstDisputedIndex();
+      const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
+      const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
 
-//     // the sequencer bisects
-//     const first = cm.commitments[cm.incorrectStepIndex - 1];
-//     const last = cm.commitments[cm.incorrectStepIndex];
-//     const step = Math.floor((first.step + last.step) / 2);
-//     const middle = {root: incorrectStates[step], step};
-//     cm.split([first, middle, last]);
-//   }
+      let leaves = _.range(0, this.cm.expectedNumOfLeaves(agreeWithStep, disagreeWithStep))
+        .map(leafIndex => this.cm.stepForIndex(leafIndex, agreeWithStep, disagreeWithStep))
+        .map(step => this.myStates()[step]);
+      leaves = leaves.slice(1);
+      this.cm.split(this.cm.states[disagreeWithIndex - 1], leaves, this.role);
 
-//   // expect(round).toEqual(4);
-//   expect(cm.commitments).toMatchObject([
-//     {root: 59, step: 59},
-//     {root: 61.1, step: 61},
-//     {root: 64.1, step: 64}
-//   ]);
-//   expect(cm.detectFraud({witness: {root: 59}, startingAt: 0}, 200)).toBeTruthy();
-// });
+      try {
+        this.switchRole();
+
+        const disagreeWithIndex = this.firstDisputedIndex();
+        this.cm.detectFraud({witness: this.cm.states[disagreeWithIndex - 1]});
+        break;
+      } catch (e) {
+        if (e.message !== 'Can only detect fraud for sequential states') {
+          throw e;
+        }
+      }
+    }
+
+    expect(this.cm.states).toMatchObject(expectedStates);
+    expect(this.cm.detectFraud({witness: {root: 59}})).toBe(expectedFraud);
+  }
+}
+
+test('automatic bisection', () => {
+  const ad = new AutomaticDisputer();
+  ad.initializeAndDispute();
+});
+
+test('automatic trisection', () => {
+  const ad = new AutomaticDisputer(3, [0, 29, 59, 89]);
+  ad.initializeAndDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
+});
