@@ -152,10 +152,7 @@ class AutomaticDisputer {
     }
   }
 
-  public initializeAndDispute(
-    expectedStates = [{root: 58}, {root: 59}, {root: 60.1}],
-    expectedFraud = true
-  ) {
+  public initializeAndDispute(expectedStates: State[], expectedFraud: boolean) {
     this.switchRole();
     let consensusWitness,
       disputedWitness: Proof = {witness: {root: 0}};
@@ -204,7 +201,7 @@ test('automatic bisection', () => {
     _.range(60, 90).map(i => i + 0.1)
   ).map(root => ({root}));
   const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
-  ad.initializeAndDispute();
+  ad.initializeAndDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
 });
 
 test('automatic trisection', () => {
