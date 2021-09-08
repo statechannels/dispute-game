@@ -5,6 +5,64 @@ type Bytes32 = number;
 export type State = {root: Bytes32};
 type Proof = {witness: State};
 
+// Helper functions for indices <-> steps
+
+/**
+ * Given a step range, calculates the step for an index
+ * @param index The index of the state that is an element of a sequence of states
+ * @param consensusStep Step number of the first state (with index 0)
+ * @param highestStep Step number of the last state (with index numSplits)
+ * @param numSplits The number of segments between the lowest and the highest split.
+ * @returns The conversion of the index to an integer step
+ */
+export function stepForIndex(
+  index: number,
+  consensusStep: number,
+  highestStep: number,
+  numbSplits: number
+): number {
+  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, highestStep, numbSplits)) {
+    throw 'Invalid index';
+  }
+  if (index === expectedNumOfLeaves(consensusStep, highestStep, numbSplits) - 1) {
+    return highestStep;
+  }
+  const stepDelta =
+    interval(consensusStep, highestStep, numbSplits) > 1
+      ? interval(consensusStep, highestStep, numbSplits)
+      : 1;
+  return consensusStep + Math.floor(stepDelta * index);
+}
+
+/**
+ * The canonical math to calculate the split interval
+ * @param consensusStep
+ * @param highestStep
+ * @param numSplits
+ * @returns A decimal interval.
+ */
+function interval(consensusStep: number, highestStep: number, numSplits: number): number {
+  const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
+  return stepsBetweenConsensusAndHighest / numSplits;
+}
+
+/**
+ * Calculate the number of leaves in a merkle tree
+ * @param consensusStep
+ * @param highestStep
+ * @param numSplits
+ * @returns An integer number of leaves
+ */
+export function expectedNumOfLeaves(
+  consensusStep: number,
+  highestStep: number,
+  numSplits: number
+): number {
+  return interval(consensusStep, highestStep, numSplits) >= 1
+    ? numSplits + 1
+    : highestStep - consensusStep + 1;
+}
+
 // When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
   public consensusStep = 0;
@@ -23,34 +81,12 @@ export class ChallengeManager {
     }
   }
 
-  private interval(consensusStep = this.consensusStep, highestStep = this.highestStep): number {
-    const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
-    return stepsBetweenConsensusAndHighest / this.numSplits;
+  private interval(): number {
+    return interval(this.consensusStep, this.highestStep, this.numSplits);
   }
 
-  /**
-   * When states are stored in a Merkle tree, this function calculates the number of leaves we expect.
-   */
-  public expectedNumOfLeaves(consensusStep: number, highestStep: number): number {
-    return this.interval(consensusStep, highestStep) >= 1
-      ? this.numSplits + 1
-      : highestStep - consensusStep + 1;
-  }
-
-  public stepForIndex(
-    index: number,
-    consensusStep: number = this.consensusStep,
-    highestStep: number = this.highestStep
-  ): number {
-    if (index < 0 || index >= this.expectedNumOfLeaves(consensusStep, highestStep)) {
-      throw 'Invalid index';
-    }
-    if (index === this.expectedNumOfLeaves(consensusStep, highestStep) - 1) {
-      return highestStep;
-    }
-    const stepDelta =
-      this.interval(consensusStep, highestStep) > 1 ? this.interval(consensusStep, highestStep) : 1;
-    return consensusStep + Math.floor(stepDelta * index);
+  public stepForIndex(index: number): number {
+    return stepForIndex(index, this.consensusStep, this.highestStep, this.numSplits);
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
@@ -77,7 +113,8 @@ export class ChallengeManager {
     }
 
     // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
-    const intermediateLeaves = this.expectedNumOfLeaves(newConsensusStep, newHighestStep) - 1;
+    const intermediateLeaves =
+      expectedNumOfLeaves(newConsensusStep, newHighestStep, this.numSplits) - 1;
     if (states.length !== intermediateLeaves) {
       throw `Expected ${intermediateLeaves} number of states, recieved ${states.length}`;
     }

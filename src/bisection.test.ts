@@ -1,4 +1,4 @@
-import {ChallengeManager, State} from './bisection';
+import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
 import _ from 'lodash';
 
 type Role = 'challenger' | 'proposer';
@@ -110,8 +110,8 @@ class AutomaticDisputer {
       const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
       const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
 
-      let leaves = _.range(0, this.cm.expectedNumOfLeaves(agreeWithStep, disagreeWithStep))
-        .map(leafIndex => this.cm.stepForIndex(leafIndex, agreeWithStep, disagreeWithStep))
+      let leaves = _.range(0, expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits))
+        .map(leafIndex => stepForIndex(leafIndex, agreeWithStep, disagreeWithStep, this.numSplits))
         .map(step => this.myStates()[step]);
       leaves = leaves.slice(1);
       this.cm.split(this.cm.states[disagreeWithIndex - 1], leaves, this.role);
