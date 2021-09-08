@@ -1,5 +1,5 @@
 import _ from 'lodash';
-
+import util from 'util';
 type Bytes32 = number;
 
 export type State = {root: Bytes32};
@@ -81,7 +81,7 @@ export class ChallengeManager {
     }
   }
 
-  private interval(): number {
+  public interval(): number {
     return interval(this.consensusStep, this.highestStep, this.numSplits);
   }
 
