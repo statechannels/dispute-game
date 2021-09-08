@@ -102,20 +102,20 @@ class AutomaticDisputer {
 
   constructor(
     public numSplits: number,
-    public correctStates: State[],
-    public incorrectStates: State[]
+    public challengerStates: State[],
+    public proposerStates: State[]
   ) {
     this.cm = new ChallengeManager(
-      this.generateInitialStates(this.numSplits, incorrectStates),
+      this.generateInitialStates(this.numSplits, proposerStates),
       state => ({root: state.root + 1}),
       state => state.root,
       this.role,
-      this.correctStates.length - 1,
+      this.challengerStates.length - 1,
       this.numSplits
     );
   }
   private myStates(): State[] {
-    const states = this.role === 'challenger' ? this.correctStates : this.incorrectStates;
+    const states = this.role === 'challenger' ? this.challengerStates : this.proposerStates;
     return states;
   }
 
