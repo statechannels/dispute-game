@@ -3,7 +3,7 @@ import _ from 'lodash';
 type Bytes32 = number;
 
 export type State = {root: Bytes32};
-type Proof = {witness: State};
+export type Proof = {witness: State};
 
 // Helper functions for indices <-> steps
 
@@ -77,7 +77,7 @@ export class ChallengeManager {
     public numSplits: number
   ) {
     if (this.states.length !== numSplits + 1) {
-      throw `Expected ${numSplits + 1} number of states, recieved ${states.length}`;
+      throw new Error(`Expected ${numSplits + 1} number of states, recieved ${states.length}`);
     }
   }
 
@@ -90,17 +90,30 @@ export class ChallengeManager {
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(consensusWitness: State, states: State[], lastSubmitter: string): any {
+  split(
+    consensusWitness: State,
+    states: State[],
+    disputedWitness: State,
+    lastSubmitter: string
+  ): any {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
     // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
     const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
     if (consensusIndex < 0) {
-      throw 'Consensus witness is not in the stored states';
+      throw new Error('Consensus witness is not in the stored states');
     }
     if (consensusIndex === this.numSplits) {
-      throw 'Consensus witness cannot be the last stored state';
+      throw new Error('Consensus witness cannot be the last stored state');
+    }
+
+    if (this.states[consensusIndex + 1].root !== disputedWitness.root) {
+      throw new Error('Disputed witness does not match');
+    }
+
+    if (states[states.length - 1].root === disputedWitness.root) {
+      throw new Error('The last state supplied must differ from the disputed witness');
     }
 
     const newConsensusStep = this.stepForIndex(consensusIndex);
@@ -116,7 +129,7 @@ export class ChallengeManager {
     const intermediateLeaves =
       expectedNumOfLeaves(newConsensusStep, newHighestStep, this.numSplits) - 1;
     if (states.length !== intermediateLeaves) {
-      throw `Expected ${intermediateLeaves} number of states, recieved ${states.length}`;
+      throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${states.length}`);
     }
 
     // Effects
@@ -126,18 +139,22 @@ export class ChallengeManager {
     this.lastSubmitter = lastSubmitter;
   }
 
-  detectFraud({witness}: Proof): boolean {
+  detectFraud({witness: consensusWitness}: Proof, {witness: disputedWitness}: Proof): boolean {
     if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
 
-    const witnessIndex = this.states.findIndex(state => state.root === witness.root);
+    const witnessIndex = this.states.findIndex(state => state.root === consensusWitness.root);
     if (witnessIndex < 0) {
-      throw 'Witness cannot be found in stored states';
+      throw new Error('Witness cannot be found in stored states');
     }
     if (witnessIndex === this.states.length - 1) {
-      throw 'Witness cannot be the last state';
+      throw new Error('Witness cannot be the last state');
     }
 
-    const correctWitnessAfter = this.progress(witness);
+    if (this.states[witnessIndex + 1].root !== disputedWitness.root) {
+      throw new Error('Disputed witness does not match stored states');
+    }
+
+    const correctWitnessAfter = this.progress(consensusWitness);
     return correctWitnessAfter.root !== this.states[witnessIndex + 1].root;
   }
 }
