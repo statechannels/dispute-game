@@ -1,4 +1,11 @@
-import {ChallengeManager, expectedNumOfLeaves, Proof, State, stepForIndex} from './bisection';
+import {
+  ChallengeManager,
+  expectedNumOfLeaves,
+  interval,
+  Proof,
+  State,
+  stepForIndex
+} from './bisection';
 import _ from 'lodash';
 
 type Role = 'challenger' | 'proposer';
@@ -92,31 +99,41 @@ test('manual tri-section', () => {
 class AutomaticDisputer {
   private cm: ChallengeManager;
   private role: Role = 'proposer';
+
   constructor(
-    public numSplits: number = 2,
-    public initialIndices: number[] = [0, 44, 89],
-    public correctStates = _.range(100),
-    public incorrectStates = _.concat(
-      _.range(60),
-      _.range(60, 90).map(i => i + 0.1)
-    )
+    public numSplits: number,
+    public correctStates: State[],
+    public incorrectStates: State[]
   ) {
     this.cm = new ChallengeManager(
-      states(this.incorrectStates, initialIndices),
+      this.generateInitialStates(this.numSplits, incorrectStates),
       state => ({root: state.root + 1}),
       state => state.root,
       this.role,
-      89,
+      this.correctStates.length - 1,
       this.numSplits
     );
   }
   private myStates(): State[] {
     const states = this.role === 'challenger' ? this.correctStates : this.incorrectStates;
-    return states.map(state => ({
-      root: state
-    }));
+    return states;
   }
 
+  private generateInitialStates(numSplits: number, states: State[]): State[] {
+    const intervalAmount = Math.floor(interval(0, states.length, numSplits));
+
+    const initialStates: State[] = [];
+
+    // We want to stop before the last state
+    // So we can manually add it the last state
+    for (let i = 0; i < numSplits; i++) {
+      const index = Math.max(0, i * intervalAmount - 1);
+      initialStates.push(states[index]);
+    }
+    // Add the very last state
+    initialStates.push(states[states.length - 1]);
+    return initialStates;
+  }
   private firstDisputedIndex(): number {
     for (let i = 0; i < this.cm.states.length; i++) {
       const step = this.cm.stepForIndex(i);
@@ -181,11 +198,21 @@ class AutomaticDisputer {
 }
 
 test('automatic bisection', () => {
-  const ad = new AutomaticDisputer();
+  const correctStates = _.range(90).map(root => ({root}));
+  const incorrectStates = _.concat(
+    _.range(60),
+    _.range(60, 90).map(i => i + 0.1)
+  ).map(root => ({root}));
+  const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
   ad.initializeAndDispute();
 });
 
 test('automatic trisection', () => {
-  const ad = new AutomaticDisputer(3, [0, 29, 59, 89]);
+  const correctStates = _.range(90).map(root => ({root}));
+  const incorrectStates = _.concat(
+    _.range(60),
+    _.range(60, 90).map(i => i + 0.1)
+  ).map(root => ({root}));
+  const ad = new AutomaticDisputer(3, correctStates, incorrectStates);
   ad.initializeAndDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
 });

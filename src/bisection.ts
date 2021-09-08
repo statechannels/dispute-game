@@ -41,7 +41,7 @@ export function stepForIndex(
  * @param numSplits
  * @returns A decimal interval.
  */
-function interval(consensusStep: number, highestStep: number, numSplits: number): number {
+export function interval(consensusStep: number, highestStep: number, numSplits: number): number {
   const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
   return stepsBetweenConsensusAndHighest / numSplits;
 }
