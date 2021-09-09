@@ -97,7 +97,7 @@ test('automatic bisection', () => {
     _.range(60, 90).map(i => i + 0.1)
   ).map(root => ({root}));
   const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
-  ad.initializeAndDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
+  ad.runDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
 });
 
 test('automatic trisection', () => {
@@ -107,5 +107,5 @@ test('automatic trisection', () => {
     _.range(60, 90).map(i => i + 0.1)
   ).map(root => ({root}));
   const ad = new AutomaticDisputer(3, correctStates, incorrectStates);
-  ad.initializeAndDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
+  ad.runDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
 });

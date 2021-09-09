@@ -64,6 +64,8 @@ class AutoDisputerAgent {
 }
 export class AutomaticDisputer {
   private cm: ChallengeManager;
+  challenger: AutoDisputerAgent;
+  proposer: AutoDisputerAgent;
 
   constructor(
     public numSplits: number,
@@ -84,35 +86,31 @@ export class AutomaticDisputer {
       this.challengerStates.length - 1,
       this.numSplits
     );
-  }
 
-  private takeTurn(proposer: AutoDisputerAgent, challenger: AutoDisputerAgent): boolean {
-    if (this.cm.caller === 'challenger') {
-      return proposer.takeTurn();
-    } else {
-      return challenger.takeTurn();
-    }
-  }
-
-  public initializeAndDispute(expectedStates: State[], expectedFraud: boolean) {
-    const proposer = new AutoDisputerAgent(
-      'proposer',
-      this.cm,
-      this.proposerStates,
-      this.numSplits
-    );
-    const challenger = new AutoDisputerAgent(
+    this.proposer = new AutoDisputerAgent('proposer', this.cm, this.proposerStates, this.numSplits);
+    this.challenger = new AutoDisputerAgent(
       'challenger',
       this.cm,
       this.challengerStates,
       this.numSplits
     );
+  }
+
+  private takeTurn(): boolean {
+    if (this.cm.caller === 'challenger') {
+      return this.proposer.takeTurn();
+    } else {
+      return this.challenger.takeTurn();
+    }
+  }
+
+  public runDispute(expectedStates: State[], expectedFraud: boolean) {
     let detectedFraud = false;
     while (this.cm.interval() > 1 && !detectedFraud) {
-      this.takeTurn(proposer, challenger);
+      this.takeTurn();
     }
     if (!detectedFraud) {
-      detectedFraud = this.takeTurn(proposer, challenger);
+      detectedFraud = this.takeTurn();
     }
 
     expect(this.cm.states).toMatchObject(expectedStates);
