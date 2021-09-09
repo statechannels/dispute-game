@@ -72,7 +72,7 @@ export class ChallengeManager {
     public states: State[],
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32,
-    public lastSubmitter: string,
+    public caller: string,
     public highestStep: number,
     public numSplits: number
   ) {
@@ -90,12 +90,7 @@ export class ChallengeManager {
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(
-    consensusWitness: State,
-    states: State[],
-    disputedWitness: State,
-    lastSubmitter: string
-  ): any {
+  split(consensusWitness: State, states: State[], disputedWitness: State, caller: string): any {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
@@ -136,7 +131,7 @@ export class ChallengeManager {
     this.consensusStep = newConsensusStep;
     this.highestStep = newHighestStep;
     this.states = [consensusWitness, ...states];
-    this.lastSubmitter = lastSubmitter;
+    this.caller = caller;
   }
 
   detectFraud({witness: consensusWitness}: Proof, {witness: disputedWitness}: Proof): boolean {
