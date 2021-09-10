@@ -1,0 +1,22 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: cimg/node:12.18.0
+    steps:
+      - checkout
+      - run: 'yarn build'
+
+  test:
+    docker:
+      - image: cimg/node:12.18.0
+    steps:
+      - checkout
+      - run: 'yarn test'
+
+# Orchestrate our job run sequence
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - test
