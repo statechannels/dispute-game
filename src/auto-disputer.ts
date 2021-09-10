@@ -48,7 +48,8 @@ class AutoDisputerAgent {
       const consensusWitness = {witness: this.cm.states[disagreeWithIndex - 1]};
       const disputedWitness = {witness: this.cm.states[disagreeWithIndex]};
 
-      const detectedFraud = this.cm.detectFraud(consensusWitness, disputedWitness);
+      const detectedFraud =
+        this.cm.interval() <= 1 ? this.cm.detectFraud(consensusWitness, disputedWitness) : false;
       return {complete: true, detectedFraud};
     }
   }
