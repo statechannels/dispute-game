@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import {ChallengeManager, State, stepForIndex} from './bisection';
+import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
 import {Role} from './bisection.test';
 
 class AutoDisputerAgent {
@@ -13,7 +13,7 @@ class AutoDisputerAgent {
   private splitStates(agreeWithStep: number, disagreeWithStep: number): State[] {
     const initialStates: State[] = [];
 
-    for (let i = 0; i <= this.numSplits; i++) {
+    for (let i = 0; i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits); i++) {
       const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.numSplits);
       initialStates.push(this.myStates[index]);
     }
@@ -74,7 +74,7 @@ export class AutomaticDisputer {
     public proposerStates: State[]
   ) {
     const initialStates = [];
-    for (let i = 0; i <= numSplits; i++) {
+    for (let i = 0; i < expectedNumOfLeaves(0, proposerStates.length - 1, numSplits); i++) {
       const index = i === 0 ? 0 : stepForIndex(i, 0, proposerStates.length - 1, numSplits);
       initialStates.push(proposerStates[index]);
     }
