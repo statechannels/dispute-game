@@ -1,5 +1,5 @@
 import _ from 'lodash';
-
+import util from 'util';
 type Bytes32 = number;
 
 export type State = {root: Bytes32};
@@ -41,7 +41,7 @@ export function stepForIndex(
  * @param numSplits
  * @returns A decimal interval.
  */
-function interval(consensusStep: number, highestStep: number, numSplits: number): number {
+export function interval(consensusStep: number, highestStep: number, numSplits: number): number {
   const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
   return stepsBetweenConsensusAndHighest / numSplits;
 }
@@ -81,7 +81,7 @@ export class ChallengeManager {
     }
   }
 
-  private interval(): number {
+  public interval(): number {
     return interval(this.consensusStep, this.highestStep, this.numSplits);
   }
 

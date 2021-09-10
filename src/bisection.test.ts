@@ -1,7 +1,8 @@
-import {ChallengeManager, expectedNumOfLeaves, Proof, State, stepForIndex} from './bisection';
+import {ChallengeManager, State} from './bisection';
 import _ from 'lodash';
+import {AutomaticDisputer} from './auto-disputer';
 
-type Role = 'challenger' | 'proposer';
+export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
 const proposerId = 'proposer' as const;
 
@@ -89,103 +90,22 @@ test('manual tri-section', () => {
   expect(cm.detectFraud({witness: {root: 4}}, {witness: {root: 5.1}})).toBe(true);
 });
 
-class AutomaticDisputer {
-  private cm: ChallengeManager;
-  private role: Role = 'proposer';
-  constructor(
-    public numSplits: number = 2,
-    public initialIndices: number[] = [0, 44, 89],
-    public correctStates = _.range(100),
-    public incorrectStates = _.concat(
-      _.range(60),
-      _.range(60, 90).map(i => i + 0.1)
-    )
-  ) {
-    this.cm = new ChallengeManager(
-      states(this.incorrectStates, initialIndices),
-      state => ({root: state.root + 1}),
-      state => state.root,
-      this.role,
-      89,
-      this.numSplits
-    );
-  }
-  private myStates(): State[] {
-    const states = this.role === 'challenger' ? this.correctStates : this.incorrectStates;
-    return states.map(state => ({
-      root: state
-    }));
-  }
-
-  private firstDisputedIndex(): number {
-    for (let i = 0; i < this.cm.states.length; i++) {
-      const step = this.cm.stepForIndex(i);
-      if (this.cm.states[i].root !== this.myStates()[step].root) {
-        return i;
-      }
-    }
-    throw 'Did not find disputed state';
-  }
-
-  private switchRole() {
-    if (this.role === 'challenger') {
-      this.role = 'proposer';
-    } else {
-      this.role = 'challenger';
-    }
-  }
-
-  public initializeAndDispute(
-    expectedStates = [{root: 58}, {root: 59}, {root: 60.1}],
-    expectedFraud = true
-  ) {
-    this.switchRole();
-    let consensusWitness,
-      disputedWitness: Proof = {witness: {root: 0}};
-    for (let round = 0; round < 10; round++) {
-      const disagreeWithIndex = this.firstDisputedIndex();
-      const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
-      const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
-
-      let leaves = _.range(0, expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits))
-        .map(leafIndex => stepForIndex(leafIndex, agreeWithStep, disagreeWithStep, this.numSplits))
-        .map(step => this.myStates()[step]);
-      leaves = leaves.slice(1);
-      this.cm.split(
-        this.cm.states[disagreeWithIndex - 1],
-        leaves,
-        this.cm.states[disagreeWithIndex],
-        this.role
-      );
-
-      try {
-        this.switchRole();
-
-        const disagreeWithIndex = this.firstDisputedIndex();
-        consensusWitness = {witness: this.cm.states[disagreeWithIndex - 1]};
-        disputedWitness = {witness: this.cm.states[disagreeWithIndex]};
-        this.cm.detectFraud(consensusWitness, disputedWitness);
-        break;
-      } catch (e) {
-        if (e.message !== 'Can only detect fraud for sequential states') {
-          throw e;
-        }
-      }
-    }
-
-    expect(this.cm.states).toMatchObject(expectedStates);
-    expect(this.cm.detectFraud(consensusWitness as Proof, disputedWitness as Proof)).toBe(
-      expectedFraud
-    );
-  }
-}
-
 test('automatic bisection', () => {
-  const ad = new AutomaticDisputer();
-  ad.initializeAndDispute();
+  const correctStates = _.range(90).map(root => ({root}));
+  const incorrectStates = _.concat(
+    _.range(60),
+    _.range(60, 90).map(i => i + 0.1)
+  ).map(root => ({root}));
+  const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
+  ad.runDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
 });
 
 test('automatic trisection', () => {
-  const ad = new AutomaticDisputer(3, [0, 29, 59, 89]);
-  ad.initializeAndDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
+  const correctStates = _.range(90).map(root => ({root}));
+  const incorrectStates = _.concat(
+    _.range(60),
+    _.range(60, 90).map(i => i + 0.1)
+  ).map(root => ({root}));
+  const ad = new AutomaticDisputer(3, correctStates, incorrectStates);
+  ad.runDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
 });
