@@ -76,7 +76,7 @@ export class ChallengeManager {
     public highestStep: number,
     public numSplits: number
   ) {
-    if (this.states.length !== numSplits + 1) {
+    if (this.states.length !== expectedNumOfLeaves(this.consensusStep, highestStep, numSplits)) {
       throw new Error(`Expected ${numSplits + 1} number of states, recieved ${states.length}`);
     }
   }
