@@ -21,15 +21,15 @@ class AutoDisputerAgent {
     return initialStates;
   }
 
-  public takeTurn(): boolean {
+  public takeTurn(): {complete: boolean; detectedFraud: boolean} {
     if (this.cm.caller === this.role) {
       throw new Error(`It's not my turn!`);
     }
     const disagreeWithIndex = this.firstDisputedIndex();
-    if (this.cm.interval() > 1) {
-      const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
-      const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
+    const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
+    const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
 
+    if (this.cm.interval() > 1 && disagreeWithStep - agreeWithStep > 1) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
       // We only want the leaves so we slice off the parent
@@ -42,13 +42,14 @@ class AutoDisputerAgent {
         this.role
       );
 
-      return false;
+      return {complete: false, detectedFraud: false};
     } else {
       const disagreeWithIndex = this.firstDisputedIndex();
       const consensusWitness = {witness: this.cm.states[disagreeWithIndex - 1]};
       const disputedWitness = {witness: this.cm.states[disagreeWithIndex]};
 
-      return this.cm.detectFraud(consensusWitness, disputedWitness);
+      const detectedFraud = this.cm.detectFraud(consensusWitness, disputedWitness);
+      return {complete: true, detectedFraud};
     }
   }
 
@@ -96,7 +97,7 @@ export class AutomaticDisputer {
     );
   }
 
-  private takeTurn(): boolean {
+  private takeTurn(): {complete: boolean; detectedFraud: boolean} {
     if (this.cm.caller === 'challenger') {
       return this.proposer.takeTurn();
     } else {
@@ -105,12 +106,12 @@ export class AutomaticDisputer {
   }
 
   public runDispute(expectedStates: State[], expectedFraud: boolean) {
+    let isComplete = false;
     let detectedFraud = false;
-    while (this.cm.interval() > 1 && !detectedFraud) {
-      this.takeTurn();
-    }
-    if (!detectedFraud) {
-      detectedFraud = this.takeTurn();
+    while (!isComplete) {
+      const result = this.takeTurn();
+      isComplete = result.complete;
+      detectedFraud = result.detectedFraud;
     }
 
     expect(this.cm.states).toMatchObject(expectedStates);
