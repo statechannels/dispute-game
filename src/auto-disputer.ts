@@ -106,7 +106,11 @@ export class AutomaticDisputer {
     }
   }
 
-  public runDispute(expectedStates: State[], expectedFraud: boolean) {
+  public get caller() {
+    return this.cm.caller;
+  }
+
+  public runDispute(): {detectedFraud: boolean; states: State[]} {
     let isComplete = false;
     let detectedFraud = false;
     while (!isComplete) {
@@ -115,7 +119,6 @@ export class AutomaticDisputer {
       detectedFraud = result.detectedFraud;
     }
 
-    expect(this.cm.states).toMatchObject(expectedStates);
-    expect(detectedFraud).toBe(expectedFraud);
+    return {detectedFraud, states: this.cm.states};
   }
 }
