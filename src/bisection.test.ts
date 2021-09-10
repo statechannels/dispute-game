@@ -91,11 +91,11 @@ test('manual tri-section', () => {
 });
 
 const amountOfStates = 90;
-const maxSplits = 90;
+const maxSplits = 100;
 
 test('Fuzzy testing', () => {
   for (let errorIndex = 1; errorIndex < amountOfStates; errorIndex++) {
-    for (let splitNum = 2; splitNum < maxSplits; splitNum++) {
+    for (let splitNum = 2; splitNum <= maxSplits; splitNum++) {
       const correctStates = _.range(amountOfStates).map(root => ({root}));
       const incorrectStates = _.concat(
         _.range(errorIndex),
