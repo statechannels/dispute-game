@@ -117,9 +117,8 @@ export class ChallengeManager {
     // In that case, the highest step not need to be updated.
     let newHighestStep = this.highestStep;
     if (consensusIndex !== this.numSplits - 1) {
-      newHighestStep = Math.floor(newConsensusStep + this.interval());
+      newHighestStep = this.stepForIndex(consensusIndex + 1);
     }
-
     // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
     const intermediateLeaves =
       expectedNumOfLeaves(newConsensusStep, newHighestStep, this.numSplits) - 1;
@@ -131,6 +130,7 @@ export class ChallengeManager {
     this.consensusStep = newConsensusStep;
     this.highestStep = newHighestStep;
     this.states = [consensusWitness, ...states];
+
     this.caller = caller;
   }
 

@@ -29,7 +29,7 @@ class AutoDisputerAgent {
     const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
     const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
 
-    if (this.cm.interval() > 1 && disagreeWithStep - agreeWithStep > 1) {
+    if (this.cm.interval() > 1) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
       // We only want the leaves so we slice off the parent
@@ -106,7 +106,11 @@ export class AutomaticDisputer {
     }
   }
 
-  public runDispute(expectedStates: State[], expectedFraud: boolean) {
+  public get caller() {
+    return this.cm.caller;
+  }
+
+  public runDispute(): {detectedFraud: boolean; states: State[]} {
     let isComplete = false;
     let detectedFraud = false;
     while (!isComplete) {
@@ -115,7 +119,6 @@ export class AutomaticDisputer {
       detectedFraud = result.detectedFraud;
     }
 
-    expect(this.cm.states).toMatchObject(expectedStates);
-    expect(detectedFraud).toBe(expectedFraud);
+    return {detectedFraud, states: this.cm.states};
   }
 }
