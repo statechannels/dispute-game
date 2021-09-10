@@ -96,7 +96,6 @@ export class ChallengeManager {
     }
     // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
     const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
-    const disputeIndex = this.states.findIndex(state => state.root === disputedWitness.root);
     if (consensusIndex < 0) {
       throw new Error('Consensus witness is not in the stored states');
     }
@@ -118,7 +117,7 @@ export class ChallengeManager {
     // In that case, the highest step not need to be updated.
     let newHighestStep = this.highestStep;
     if (consensusIndex !== this.numSplits - 1) {
-      newHighestStep = this.stepForIndex(disputeIndex);
+      newHighestStep = this.stepForIndex(consensusIndex + 1);
     }
     // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
     const intermediateLeaves =
