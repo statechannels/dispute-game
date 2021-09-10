@@ -1,90 +1,155 @@
 import _ from 'lodash';
-
+import util from 'util';
 type Bytes32 = number;
 
-export type StepCommitment = {root: Bytes32; step: number};
-type State = {root: Bytes32};
-type Proof = {startingAt: number; witness: State};
+export type State = {root: Bytes32};
+export type Proof = {witness: State};
 
+// Helper functions for indices <-> steps
+
+/**
+ * Given a step range, calculates the step for an index
+ * @param index The index of the state that is an element of a sequence of states
+ * @param consensusStep Step number of the first state (with index 0)
+ * @param highestStep Step number of the last state (with index numSplits)
+ * @param numSplits The number of segments between the lowest and the highest split.
+ * @returns The conversion of the index to an integer step
+ */
+export function stepForIndex(
+  index: number,
+  consensusStep: number,
+  highestStep: number,
+  numbSplits: number
+): number {
+  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, highestStep, numbSplits)) {
+    throw 'Invalid index';
+  }
+  if (index === expectedNumOfLeaves(consensusStep, highestStep, numbSplits) - 1) {
+    return highestStep;
+  }
+  const stepDelta =
+    interval(consensusStep, highestStep, numbSplits) > 1
+      ? interval(consensusStep, highestStep, numbSplits)
+      : 1;
+  return consensusStep + Math.floor(stepDelta * index);
+}
+
+/**
+ * The canonical math to calculate the split interval
+ * @param consensusStep
+ * @param highestStep
+ * @param numSplits
+ * @returns A decimal interval.
+ */
+export function interval(consensusStep: number, highestStep: number, numSplits: number): number {
+  const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
+  return stepsBetweenConsensusAndHighest / numSplits;
+}
+
+/**
+ * Calculate the number of leaves in a merkle tree
+ * @param consensusStep
+ * @param highestStep
+ * @param numSplits
+ * @returns An integer number of leaves
+ */
+export function expectedNumOfLeaves(
+  consensusStep: number,
+  highestStep: number,
+  numSplits: number
+): number {
+  return interval(consensusStep, highestStep, numSplits) >= 1
+    ? numSplits + 1
+    : highestStep - consensusStep + 1;
+}
+
+// When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
-  public incorrectStepIndex = 0;
+  public consensusStep = 0;
   constructor(
-    public commitments: StepCommitment[],
+    // These states are supplied by the challenger.
+    // In the future, only the hash of the merkle root will be stored
+    public states: State[],
     public progress: (state: State) => State,
-    public fingerprint: (state: State) => Bytes32
+    public fingerprint: (state: State) => Bytes32,
+    public caller: string,
+    public highestStep: number,
+    public numSplits: number
   ) {
-    if (this.commitments.length < 2) {
-      throw 'invalid commitment length';
+    if (this.states.length !== numSplits + 1) {
+      throw new Error(`Expected ${numSplits + 1} number of states, recieved ${states.length}`);
     }
   }
 
-  assertInvalidStep(index: number) {
-    // checks
-    if (index == 0) {
-      throw 'cannot assert first step invalid';
-    }
-
-    if (index > this.commitments.length - 1) {
-      throw 'Invalid challenge';
-    }
-
-    // effects
-    this.incorrectStepIndex = index;
+  public interval(): number {
+    return interval(this.consensusStep, this.highestStep, this.numSplits);
   }
 
-  split(commitments: StepCommitment[]): any {
-    // checks
-    const before = this.commitments[this.incorrectStepIndex - 1];
-    const after = this.commitments[this.incorrectStepIndex];
-
-    const numSplits = commitments.length - 1;
-    if (numSplits < 2) {
-      throw 'invalid commitment length';
-    }
-
-    const first = commitments[0];
-    const last = commitments[numSplits];
-
-    if (!_.isEqual(first, before)) {
-      throw 'first commitment is invalid';
-    }
-
-    if (!_.isEqual(last, after)) {
-      throw 'last commitment is invalid';
-    }
-
-    for (let i = 0; i < numSplits; i++) {
-      const {step} = commitments[i];
-      const expectedStep = first.step + Math.floor((i * (last.step - first.step)) / numSplits);
-      if (step !== Math.floor(expectedStep)) {
-        throw 'invalid indices';
-      }
-    }
-
-    // effects
-    this.commitments = commitments;
+  public stepForIndex(index: number): number {
+    return stepForIndex(index, this.consensusStep, this.highestStep, this.numSplits);
   }
 
-  detectFraud({witness, startingAt}: Proof, gasLimit = 1): boolean {
-    const before = this.commitments[startingAt];
-    const after = this.commitments[startingAt + 1];
-
-    if (before.root !== witness.root) {
-      return false;
+  // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
+  split(consensusWitness: State, states: State[], disputedWitness: State, caller: string): any {
+    if (this.interval() <= 1) {
+      throw new Error('States cannot be split further');
+    }
+    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
+    const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
+    if (consensusIndex < 0) {
+      throw new Error('Consensus witness is not in the stored states');
+    }
+    if (consensusIndex === this.numSplits) {
+      throw new Error('Consensus witness cannot be the last stored state');
     }
 
-    let gasUsed = 0;
-    for (let i = 0; i < after.step - before.step; i++) {
-      gasUsed += witness.root;
-      witness = this.progress(witness);
+    if (this.states[consensusIndex + 1].root !== disputedWitness.root) {
+      throw new Error('Disputed witness does not match');
     }
 
-    // Simulate running out of gas
-    // The assumption here is that a single step can _always_ be validated on-chain.
-    if (after.step - before.step > 1 && gasUsed > gasLimit) {
-      throw new Error('out of gas');
+    if (states[states.length - 1].root === disputedWitness.root) {
+      throw new Error('The last state supplied must differ from the disputed witness');
     }
 
-    return after.root !== witness.root;
+    const newConsensusStep = this.stepForIndex(consensusIndex);
+
+    // The else case is when the consensus state is the second to last state in the state list.
+    // In that case, the highest step not need to be updated.
+    let newHighestStep = this.highestStep;
+    if (consensusIndex !== this.numSplits - 1) {
+      newHighestStep = Math.floor(newConsensusStep + this.interval());
+    }
+
+    // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
+    const intermediateLeaves =
+      expectedNumOfLeaves(newConsensusStep, newHighestStep, this.numSplits) - 1;
+    if (states.length !== intermediateLeaves) {
+      throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${states.length}`);
+    }
+
+    // Effects
+    this.consensusStep = newConsensusStep;
+    this.highestStep = newHighestStep;
+    this.states = [consensusWitness, ...states];
+    this.caller = caller;
+  }
+
+  detectFraud({witness: consensusWitness}: Proof, {witness: disputedWitness}: Proof): boolean {
+    if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
+
+    const witnessIndex = this.states.findIndex(state => state.root === consensusWitness.root);
+    if (witnessIndex < 0) {
+      throw new Error('Witness cannot be found in stored states');
+    }
+    if (witnessIndex === this.states.length - 1) {
+      throw new Error('Witness cannot be the last state');
+    }
+
+    if (this.states[witnessIndex + 1].root !== disputedWitness.root) {
+      throw new Error('Disputed witness does not match stored states');
+    }
+
+    const correctWitnessAfter = this.progress(consensusWitness);
+    return correctWitnessAfter.root !== this.states[witnessIndex + 1].root;
   }
 }
