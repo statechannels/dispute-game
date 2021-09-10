@@ -104,10 +104,10 @@ test('Fuzzy testing', () => {
 
       try {
         const ad = new AutomaticDisputer(splitNum, correctStates, incorrectStates);
-        const {detectedFraud, states} = ad.runDispute();
+        // TODO: We should check that the states contain the state at errorIndex
+        const {detectedFraud} = ad.runDispute();
         if (ad.caller === 'proposer') {
           expect(detectedFraud).toBe(true);
-          expect(states);
         } else {
           expect(detectedFraud).toBe(false);
         }
