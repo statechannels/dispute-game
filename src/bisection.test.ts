@@ -90,22 +90,49 @@ test('manual tri-section', () => {
   expect(cm.detectFraud({witness: {root: 4}}, {witness: {root: 5.1}})).toBe(true);
 });
 
-test('automatic bisection', () => {
-  const correctStates = _.range(90).map(root => ({root}));
-  const incorrectStates = _.concat(
-    _.range(60),
-    _.range(60, 90).map(i => i + 0.1)
-  ).map(root => ({root}));
-  const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
-  ad.runDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
-});
+// test('automatic bisection', () => {
+//   const correctStates = _.range(90).map(root => ({root}));
+//   const incorrectStates = _.concat(
+//     _.range(60),
+//     _.range(60, 90).map(i => i + 0.1)
+//   ).map(root => ({root}));
+//   const ad = new AutomaticDisputer(2, correctStates, incorrectStates);
+//   ad.runDispute([{root: 58}, {root: 59}, {root: 60.1}], true);
+// });
 
-test('automatic trisection', () => {
-  const correctStates = _.range(90).map(root => ({root}));
-  const incorrectStates = _.concat(
-    _.range(60),
-    _.range(60, 90).map(i => i + 0.1)
-  ).map(root => ({root}));
-  const ad = new AutomaticDisputer(3, correctStates, incorrectStates);
-  ad.runDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
+// test('automatic trisection', () => {
+//   const correctStates = _.range(90).map(root => ({root}));
+//   const incorrectStates = _.concat(
+//     _.range(60),
+//     _.range(60, 90).map(i => i + 0.1)
+//   ).map(root => ({root}));
+//   const ad = new AutomaticDisputer(3, correctStates, incorrectStates);
+//   ad.runDispute([{root: 59}, {root: 60}, {root: 61}, {root: 62}], false);
+// });
+
+const amountOfStates = 90;
+const maxSplits = 10;
+test.only('Fuzz testing', () => {
+  for (let errorIndex = 2; errorIndex < amountOfStates; errorIndex++) {
+    for (let splitNum = 2; splitNum < maxSplits; splitNum++) {
+      const correctStates = _.range(amountOfStates).map(root => ({root}));
+      const incorrectStates = _.concat(
+        _.range(errorIndex),
+        _.range(errorIndex, amountOfStates).map(i => i + 0.1)
+      ).map(root => ({root}));
+      try {
+        const ad = new AutomaticDisputer(splitNum, correctStates, incorrectStates);
+        const {detectedFraud, states} = ad.runDispute();
+        if (ad.caller === 'proposer') {
+          expect(detectedFraud).toBe(true);
+          expect(states);
+        } else {
+          expect(detectedFraud).toBe(false);
+        }
+      } catch (error) {
+        console.error(`Failed with splitNum ${splitNum} and error starting at index ${errorIndex}`);
+        throw error;
+      }
+    }
+  }
 });
