@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
-import {Role} from './bisection.test';
+import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex, Hash} from './bisection';
+import {fingerprint, Role} from './bisection.test';
 
 class AutoDisputerAgent {
   constructor(
@@ -36,28 +36,34 @@ class AutoDisputerAgent {
       leaves = leaves.slice(1);
 
       this.cm.split(
-        this.cm.states[disagreeWithIndex - 1],
-        leaves,
-        this.cm.states[disagreeWithIndex],
+        {witness: this.cm.stateHashes[disagreeWithIndex - 1]},
+        leaves.map(fingerprint),
+        {witness: this.cm.stateHashes[disagreeWithIndex]},
         this.role
       );
 
       return {complete: false, detectedFraud: false};
     } else {
       const disagreeWithIndex = this.firstDisputedIndex();
-      const consensusWitness = {witness: this.cm.states[disagreeWithIndex - 1]};
-      const disputedWitness = {witness: this.cm.states[disagreeWithIndex]};
+      const consensusWitness = {witness: this.cm.stateHashes[disagreeWithIndex - 1]};
+      const disputedWitness = {witness: this.cm.stateHashes[disagreeWithIndex]};
 
       const detectedFraud =
-        this.cm.interval() <= 1 ? this.cm.detectFraud(consensusWitness, disputedWitness) : false;
+        this.cm.interval() <= 1
+          ? this.cm.detectFraud(
+              consensusWitness,
+              this.myStates[disagreeWithIndex - 1],
+              disputedWitness
+            )
+          : false;
       return {complete: true, detectedFraud};
     }
   }
 
   private firstDisputedIndex(): number {
-    for (let i = 0; i < this.cm.states.length; i++) {
+    for (let i = 0; i < this.cm.stateHashes.length; i++) {
       const step = this.cm.stepForIndex(i);
-      if (this.cm.states[i].root !== this.myStates[step].root) {
+      if (this.cm.stateHashes[i] !== fingerprint(this.myStates[step])) {
         return i;
       }
     }
@@ -81,9 +87,9 @@ export class AutomaticDisputer {
     }
 
     this.cm = new ChallengeManager(
-      initialStates,
+      initialStates.map(fingerprint),
       state => ({root: state.root + 1}),
-      state => state.root,
+      fingerprint,
       'proposer',
       this.challengerStates.length - 1,
       this.numSplits
@@ -110,7 +116,7 @@ export class AutomaticDisputer {
     return this.cm.caller;
   }
 
-  public runDispute(): {detectedFraud: boolean; states: State[]} {
+  public runDispute(): {detectedFraud: boolean; states: Hash[]} {
     let isComplete = false;
     let detectedFraud = false;
     while (!isComplete) {
@@ -119,6 +125,6 @@ export class AutomaticDisputer {
       detectedFraud = result.detectedFraud;
     }
 
-    return {detectedFraud, states: this.cm.states};
+    return {detectedFraud, states: this.cm.stateHashes};
   }
 }
