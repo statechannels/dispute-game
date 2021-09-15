@@ -11,25 +11,25 @@ export type Proof = {witness: State};
  * Given a step range, calculates the step for an index
  * @param index The index of the state that is an element of a sequence of states
  * @param consensusStep Step number of the first state (with index 0)
- * @param highestStep Step number of the last state (with index numSplits)
+ * @param disputedStep Step number of the last state (with index numSplits)
  * @param numSplits The number of segments between the lowest and the highest split.
  * @returns The conversion of the index to an integer step
  */
 export function stepForIndex(
   index: number,
   consensusStep: number,
-  highestStep: number,
+  disputedStep: number,
   numbSplits: number
 ): number {
-  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, highestStep, numbSplits)) {
+  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, disputedStep, numbSplits)) {
     throw 'Invalid index';
   }
-  if (index === expectedNumOfLeaves(consensusStep, highestStep, numbSplits) - 1) {
-    return highestStep;
+  if (index === expectedNumOfLeaves(consensusStep, disputedStep, numbSplits) - 1) {
+    return disputedStep;
   }
   const stepDelta =
-    interval(consensusStep, highestStep, numbSplits) > 1
-      ? interval(consensusStep, highestStep, numbSplits)
+    interval(consensusStep, disputedStep, numbSplits) > 1
+      ? interval(consensusStep, disputedStep, numbSplits)
       : 1;
   return consensusStep + Math.floor(stepDelta * index);
 }
@@ -37,30 +37,30 @@ export function stepForIndex(
 /**
  * The canonical math to calculate the split interval
  * @param consensusStep
- * @param highestStep
+ * @param disputedStep
  * @param numSplits
  * @returns A decimal interval.
  */
-export function interval(consensusStep: number, highestStep: number, numSplits: number): number {
-  const stepsBetweenConsensusAndHighest = highestStep - consensusStep;
-  return stepsBetweenConsensusAndHighest / numSplits;
+export function interval(consensusStep: number, disputedStep: number, numSplits: number): number {
+  const stepsBetweenConsensusAndDisputed = disputedStep - consensusStep;
+  return stepsBetweenConsensusAndDisputed / numSplits;
 }
 
 /**
  * Calculate the number of leaves in a merkle tree
  * @param consensusStep
- * @param highestStep
+ * @param disputedStep
  * @param numSplits
  * @returns An integer number of leaves
  */
 export function expectedNumOfLeaves(
   consensusStep: number,
-  highestStep: number,
+  disputedStep: number,
   numSplits: number
 ): number {
-  return interval(consensusStep, highestStep, numSplits) >= 1
+  return interval(consensusStep, disputedStep, numSplits) >= 1
     ? numSplits + 1
-    : highestStep - consensusStep + 1;
+    : disputedStep - consensusStep + 1;
 }
 
 // When implemented in Solidity, the challenger will deploy the contract
@@ -73,7 +73,7 @@ export class ChallengeManager {
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Bytes32,
     public caller: string,
-    public highestStep: number,
+    public disputedStep: number,
     public numSplits: number
   ) {
     if (this.states.length !== numSplits + 1) {
@@ -82,11 +82,11 @@ export class ChallengeManager {
   }
 
   public interval(): number {
-    return interval(this.consensusStep, this.highestStep, this.numSplits);
+    return interval(this.consensusStep, this.disputedStep, this.numSplits);
   }
 
   public stepForIndex(index: number): number {
-    return stepForIndex(index, this.consensusStep, this.highestStep, this.numSplits);
+    return stepForIndex(index, this.consensusStep, this.disputedStep, this.numSplits);
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
@@ -114,21 +114,21 @@ export class ChallengeManager {
     const newConsensusStep = this.stepForIndex(consensusIndex);
 
     // The else case is when the consensus state is the second to last state in the state list.
-    // In that case, the highest step not need to be updated.
-    let newHighestStep = this.highestStep;
+    // In that case, the disputed step not need to be updated.
+    let newDisputedStep = this.disputedStep;
     if (consensusIndex !== this.numSplits - 1) {
-      newHighestStep = this.stepForIndex(consensusIndex + 1);
+      newDisputedStep = this.stepForIndex(consensusIndex + 1);
     }
     // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
     const intermediateLeaves =
-      expectedNumOfLeaves(newConsensusStep, newHighestStep, this.numSplits) - 1;
+      expectedNumOfLeaves(newConsensusStep, newDisputedStep, this.numSplits) - 1;
     if (states.length !== intermediateLeaves) {
       throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${states.length}`);
     }
 
     // Effects
     this.consensusStep = newConsensusStep;
-    this.highestStep = newHighestStep;
+    this.disputedStep = newDisputedStep;
     this.states = [consensusWitness, ...states];
 
     this.caller = caller;
