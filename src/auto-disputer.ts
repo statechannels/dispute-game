@@ -52,7 +52,7 @@ class AutoDisputerAgent {
         this.cm.interval() <= 1
           ? this.cm.detectFraud(
               consensusWitness,
-              this.myStates[disagreeWithIndex - 1],
+              this.myStates[this.cm.stepForIndex(disagreeWithIndex - 1)],
               disputedWitness
             )
           : false;
