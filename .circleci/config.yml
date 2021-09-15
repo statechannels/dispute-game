@@ -5,6 +5,7 @@ jobs:
       - image: cimg/node:12.18.0
     steps:
       - checkout
+      - run: 'yarn'
       - run: 'yarn build'
 
   test:
