@@ -16,6 +16,8 @@ jobs:
       - image: cimg/node:12.18.0
     steps:
       - checkout
+      - attach_workspace:
+          at: /home/circleci/project
       - run: 'yarn build'
 
   test:
@@ -23,6 +25,8 @@ jobs:
       - image: cimg/node:12.18.0
     steps:
       - checkout
+      - attach_workspace:
+          at: /home/circleci/project
       - run: 'yarn test'
 
 workflows:
