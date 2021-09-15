@@ -89,12 +89,12 @@ export class ChallengeManager {
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(consensusWitness: Witness, states: Hash[], disputedWitness: Witness, caller: string): any {
+  split(consensusWitness: Witness, hashes: Hash[], disputedWitness: Witness, caller: string): any {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
     // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
-    const consensusIndex = this.stateHashes.findIndex(state => state === consensusWitness.witness);
+    const consensusIndex = this.stateHashes.findIndex(hash => hash === consensusWitness.witness);
     if (consensusIndex < 0) {
       throw new Error('Consensus witness is not in the stored states');
     }
@@ -107,7 +107,7 @@ export class ChallengeManager {
       throw new Error('Disputed witness does not match');
     }
 
-    if (states[states.length - 1] === disputedWitness.witness) {
+    if (hashes[hashes.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
     }
 
@@ -122,14 +122,14 @@ export class ChallengeManager {
     // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
     const intermediateLeaves =
       expectedNumOfLeaves(newConsensusStep, newDisputedStep, this.numSplits) - 1;
-    if (states.length !== intermediateLeaves) {
-      throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${states.length}`);
+    if (hashes.length !== intermediateLeaves) {
+      throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${hashes.length}`);
     }
 
     // Effects
     this.consensusStep = newConsensusStep;
     this.disputedStep = newDisputedStep;
-    this.stateHashes = [consensusWitness.witness, ...states];
+    this.stateHashes = [consensusWitness.witness, ...hashes];
 
     this.caller = caller;
   }
