@@ -1,93 +1,108 @@
-import {ChallengeManager, State} from './bisection';
+import {ChallengeManager, State, Witness} from './bisection';
 import _ from 'lodash';
 import {AutomaticDisputer} from './auto-disputer';
+import {sha3_256} from 'js-sha3';
 
 export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
 const proposerId = 'proposer' as const;
 
-function states(states: number[], indices: number[]): State[] {
-  return indices.map(step => ({root: states[step]}));
+function states(values: number[], indices: number[]): State[] {
+  return indices.map(step => ({root: values[step]}));
 }
 
-function state(states: number[], index: number): State {
-  return {root: states[index]};
+function state(values: number[], index: number): State {
+  return {root: values[index]};
+}
+
+export const fingerprint = (state: State) => sha3_256(state.root.toString());
+
+function fingerprints(values: number[], indices: number[]) {
+  return states(values, indices).map(fingerprint);
+}
+
+function witness(values: number[], index: number): Witness {
+  return {witness: fingerprint(state(values, index))};
 }
 
 test('manual bisection', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const cm = new ChallengeManager(
-    states(correctStates, [0, 4, 9]),
+    fingerprints(correctStates, [0, 4, 9]),
     state => ({root: state.root + 1}),
-    state => state.root,
+    fingerprint,
     challengerId,
     9,
     2
   );
 
   cm.split(
-    state(incorrectStates, 4),
-    states(incorrectStates, [6, 9]),
-    state(correctStates, 9),
+    witness(incorrectStates, 4),
+    fingerprints(incorrectStates, [6, 9]),
+    witness(correctStates, 9),
     proposerId
   );
 
   expect(() =>
     cm.split(
-      state(incorrectStates, 9),
-      states(correctStates, [9]),
-      state(incorrectStates, 9),
+      witness(incorrectStates, 9),
+      fingerprints(correctStates, [9]),
+      witness(incorrectStates, 9),
       challengerId
     )
   ).toThrowError('Consensus witness cannot be the last stored state');
 
   expect(() =>
     cm.split(
-      state(correctStates, 1),
-      states(correctStates, [2, 9]),
-      state(incorrectStates, 9),
+      witness(correctStates, 1),
+      fingerprints(correctStates, [2, 9]),
+      witness(incorrectStates, 9),
       challengerId
     )
   ).toThrowError('Consensus witness is not in the stored states');
 
   expect(() =>
     cm.split(
-      state(correctStates, 4),
-      states(correctStates, [5, 6]),
-      state(correctStates, 6),
+      witness(correctStates, 4),
+      fingerprints(correctStates, [5, 6]),
+      witness(correctStates, 6),
       challengerId
     )
   ).toThrowError('Disputed witness does not match');
 
   cm.split(
-    state(correctStates, 4),
-    states(correctStates, [5, 6]),
-    state(incorrectStates, 6),
+    witness(correctStates, 4),
+    fingerprints(correctStates, [5, 6]),
+    witness(incorrectStates, 6),
     challengerId
   );
-  expect(cm.detectFraud({witness: {root: 4}}, {witness: {root: 5}})).toBe(false);
+  expect(cm.detectFraud(witness(correctStates, 5), {root: 5}, witness(correctStates, 6))).toBe(
+    false
+  );
 });
 
 test('manual tri-section', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const cm = new ChallengeManager(
-    states(correctStates, [0, 3, 6, 9]),
+    fingerprints(correctStates, [0, 3, 6, 9]),
     state => ({root: state.root + 1}),
-    state => state.root,
+    fingerprint,
     challengerId,
     9,
     3
   );
 
   cm.split(
-    state(incorrectStates, 3),
-    states(incorrectStates, [4, 5, 6]),
-    state(correctStates, 6),
+    witness(incorrectStates, 3),
+    fingerprints(incorrectStates, [4, 5, 6]),
+    witness(correctStates, 6),
     proposerId
   );
-  expect(cm.detectFraud({witness: {root: 4}}, {witness: {root: 5.1}})).toBe(true);
+  expect(cm.detectFraud(witness(incorrectStates, 4), {root: 4}, witness(incorrectStates, 5))).toBe(
+    true
+  );
 });
 
 const amountOfStates = 90;

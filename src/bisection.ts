@@ -1,9 +1,8 @@
 import _ from 'lodash';
-import util from 'util';
 type Bytes32 = number;
-
+export type Hash = string;
+export type Witness = {witness: Hash};
 export type State = {root: Bytes32};
-export type Proof = {witness: State};
 
 // Helper functions for indices <-> steps
 
@@ -69,15 +68,15 @@ export class ChallengeManager {
   constructor(
     // These states are supplied by the challenger.
     // In the future, only the hash of the merkle root will be stored
-    public states: State[],
+    public stateHashes: Hash[],
     public progress: (state: State) => State,
-    public fingerprint: (state: State) => Bytes32,
+    public fingerprint: (state: State) => Hash,
     public caller: string,
     public disputedStep: number,
     public numSplits: number
   ) {
-    if (this.states.length !== numSplits + 1) {
-      throw new Error(`Expected ${numSplits + 1} number of states, recieved ${states.length}`);
+    if (this.stateHashes.length !== numSplits + 1) {
+      throw new Error(`Expected ${numSplits + 1} number of states, recieved ${stateHashes.length}`);
     }
   }
 
@@ -90,12 +89,12 @@ export class ChallengeManager {
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(consensusWitness: State, states: State[], disputedWitness: State, caller: string): any {
+  split(consensusWitness: Witness, states: Hash[], disputedWitness: Witness, caller: string): any {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
     // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
-    const consensusIndex = this.states.findIndex(state => state.root === consensusWitness.root);
+    const consensusIndex = this.stateHashes.findIndex(state => state === consensusWitness.witness);
     if (consensusIndex < 0) {
       throw new Error('Consensus witness is not in the stored states');
     }
@@ -103,11 +102,12 @@ export class ChallengeManager {
       throw new Error('Consensus witness cannot be the last stored state');
     }
 
-    if (this.states[consensusIndex + 1].root !== disputedWitness.root) {
+    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
+    if (this.stateHashes[consensusIndex + 1] !== disputedWitness.witness) {
       throw new Error('Disputed witness does not match');
     }
 
-    if (states[states.length - 1].root === disputedWitness.root) {
+    if (states[states.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
     }
 
@@ -129,27 +129,35 @@ export class ChallengeManager {
     // Effects
     this.consensusStep = newConsensusStep;
     this.disputedStep = newDisputedStep;
-    this.states = [consensusWitness, ...states];
+    this.stateHashes = [consensusWitness.witness, ...states];
 
     this.caller = caller;
   }
 
-  detectFraud({witness: consensusWitness}: Proof, {witness: disputedWitness}: Proof): boolean {
+  detectFraud(
+    {witness: consensusWitness}: Witness,
+    consensusState: State,
+    {witness: disputedWitness}: Witness
+  ): boolean {
     if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
 
-    const witnessIndex = this.states.findIndex(state => state.root === consensusWitness.root);
+    const witnessIndex = this.stateHashes.findIndex(state => state === consensusWitness);
     if (witnessIndex < 0) {
       throw new Error('Witness cannot be found in stored states');
     }
-    if (witnessIndex === this.states.length - 1) {
+    if (witnessIndex === this.stateHashes.length - 1) {
       throw new Error('Witness cannot be the last state');
     }
 
-    if (this.states[witnessIndex + 1].root !== disputedWitness.root) {
+    if (this.stateHashes[witnessIndex + 1] !== disputedWitness) {
       throw new Error('Disputed witness does not match stored states');
     }
 
-    const correctWitnessAfter = this.progress(consensusWitness);
-    return correctWitnessAfter.root !== this.states[witnessIndex + 1].root;
+    if (this.fingerprint(consensusState) !== consensusWitness) {
+      throw new Error('Consensus state does not match the consensusWitness');
+    }
+
+    const correctWitnessAfter = this.progress(consensusState);
+    return this.fingerprint(correctWitnessAfter) !== this.stateHashes[witnessIndex + 1];
   }
 }
