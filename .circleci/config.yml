@@ -1,11 +1,21 @@
 version: 2.1
 jobs:
-  build:
+  prepare:
     docker:
       - image: cimg/node:12.18.0
     steps:
       - checkout
       - run: 'yarn'
+      - persist_to_workspace:
+          root: /home/circleci/project
+          paths:
+            - node_modules
+
+  build:
+    docker:
+      - image: cimg/node:12.18.0
+    steps:
+      - checkout
       - run: 'yarn build'
 
   test:
@@ -15,9 +25,13 @@ jobs:
       - checkout
       - run: 'yarn test'
 
-# Orchestrate our job run sequence
 workflows:
   build_and_test:
     jobs:
-      - build
-      - test
+      - prepare
+      - test:
+          requires:
+            - prepare
+      - build:
+          requires:
+            - prepare
