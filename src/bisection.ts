@@ -1,7 +1,13 @@
 import _ from 'lodash';
+import {Proof as MerkleToolsProof} from 'merkle-tools';
+import {generateRoot, validateWitness} from './merkle';
+type Proof = MerkleToolsProof<string>[];
 type Bytes32 = number;
 export type Hash = string;
-export type Witness = {witness: Hash};
+export type WitnessProof = {
+  witness: Hash;
+  proof: Proof;
+};
 export type State = {root: Bytes32};
 
 // Helper functions for indices <-> steps
@@ -65,6 +71,7 @@ export function expectedNumOfLeaves(
 // When implemented in Solidity, the challenger will deploy the contract
 export class ChallengeManager {
   public consensusStep = 0;
+  public root: Hash;
   constructor(
     // These states are supplied by the challenger.
     // In the future, only the hash of the merkle root will be stored
@@ -78,6 +85,7 @@ export class ChallengeManager {
     if (this.stateHashes.length !== numSplits + 1) {
       throw new Error(`Expected ${numSplits + 1} number of states, recieved ${stateHashes.length}`);
     }
+    this.root = generateRoot(stateHashes);
   }
 
   public interval(): number {
@@ -89,24 +97,26 @@ export class ChallengeManager {
   }
 
   // TODO: consensusWitness and disputedWitness will be merkle tree witnesses
-  split(consensusWitness: Witness, hashes: Hash[], disputedWitness: Witness, caller: string): any {
+  split(
+    consensusWitness: WitnessProof,
+    hashes: Hash[],
+    disputedWitness: WitnessProof,
+    caller: string
+  ): any {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
-    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
+
+    const validConsensusWitness = validateWitness(consensusWitness, this.root);
+    if (!validConsensusWitness) {
+      throw new Error('Invalid consensus witness proof');
+    }
+
+    const validDisputeWitness = validateWitness(disputedWitness, this.root);
+    if (!validDisputeWitness) {
+      throw new Error('Invalid dispute witness proof');
+    }
     const consensusIndex = this.stateHashes.findIndex(hash => hash === consensusWitness.witness);
-    if (consensusIndex < 0) {
-      throw new Error('Consensus witness is not in the stored states');
-    }
-    if (consensusIndex === this.numSplits) {
-      throw new Error('Consensus witness cannot be the last stored state');
-    }
-
-    // TODO: With a merkle tree, the witness needs to be validated as opposed to compared to stored states
-    if (this.stateHashes[consensusIndex + 1] !== disputedWitness.witness) {
-      throw new Error('Disputed witness does not match');
-    }
-
     if (hashes[hashes.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
     }
@@ -130,14 +140,14 @@ export class ChallengeManager {
     this.consensusStep = newConsensusStep;
     this.disputedStep = newDisputedStep;
     this.stateHashes = [consensusWitness.witness, ...hashes];
-
+    this.root = generateRoot(this.stateHashes);
     this.caller = caller;
   }
 
   detectFraud(
-    {witness: consensusWitness}: Witness,
+    {witness: consensusWitness}: WitnessProof,
     consensusState: State,
-    {witness: disputedWitness}: Witness
+    {witness: disputedWitness}: WitnessProof
   ): boolean {
     if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
 

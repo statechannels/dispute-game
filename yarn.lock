@@ -2694,6 +2694,13 @@ merge-stream@^2.0.0:
   resolved "https://registry.yarnpkg.com/merge-stream/-/merge-stream-2.0.0.tgz#52823629a14dd00c9770fb6ad47dc6310f2c1f60"
   integrity sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==
 
+merkle-tools@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/merkle-tools/-/merkle-tools-1.4.1.tgz#d08799886a6d51f5ee2bf0195f967b3cc3afd62c"
+  integrity sha512-QhO1/eDvAnyn0oXgRWlydVWYVMrVJwrdNICYvQXYhBU1Bjj1LoxsQxdAKJ5ttN3L6pkKhjcK6O4k927kgTMdqw==
+  dependencies:
+    js-sha3 "^0.8.0"
+
 micromatch@^4.0.4:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/micromatch/-/micromatch-4.0.4.tgz#896d519dfe9db25fce94ceb7a500919bf881ebf9"
