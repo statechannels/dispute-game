@@ -107,8 +107,8 @@ test('manual tri-section', () => {
   ).toBe(true);
 });
 
-const amountOfStates = 90;
-const maxSplits = 90;
+const amountOfStates = 25;
+const maxSplits = 25;
 
 test('Fuzzy testing', () => {
   for (let errorIndex = 1; errorIndex < amountOfStates; errorIndex++) {
