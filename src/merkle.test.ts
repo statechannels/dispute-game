@@ -7,7 +7,7 @@ test('it returns false  when the proof is invalid for the root', () => {
   const invalidRoot = generateRoot(invalidHashses);
   const witnessProof = generateWitness(validHashes, 2);
 
-  expect(validateWitness(witnessProof, invalidRoot)).toBe(false);
+  expect(validateWitness(witnessProof, invalidRoot, 2)).toBe(false);
 });
 
 test('it returns true  for a valid proof and root', () => {
@@ -15,6 +15,6 @@ test('it returns true  for a valid proof and root', () => {
   const validRoot = generateRoot(validHashes);
   const witnessProof = generateWitness(validHashes, 2);
 
-  expect(validateWitness(witnessProof, validRoot)).toBe(true);
+  expect(validateWitness(witnessProof, validRoot, 2)).toBe(true);
 });
-14
+14;

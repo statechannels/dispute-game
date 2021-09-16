@@ -83,6 +83,17 @@ export class ChallengeManager {
     this.root = generateRoot(stateHashes);
   }
 
+  /**
+   * This only works with full, binary trees. For now, we are padding the leaves with leaves of sha256('0').
+   */
+  public get depth() {
+    return Math.ceil(Math.log2(this.expectedNumLeaves()));
+  }
+
+  public expectedNumLeaves(): number {
+    return expectedNumOfLeaves(this.consensusStep, this.disputedStep, this.numSplits);
+  }
+
   public interval(): number {
     return interval(this.consensusStep, this.disputedStep, this.numSplits);
   }
@@ -108,12 +119,12 @@ export class ChallengeManager {
       throw new Error('Consensus witness cannot be the last stored state');
     }
 
-    const validConsensusWitness = validateWitness(consensusWitness, this.root);
+    const validConsensusWitness = validateWitness(consensusWitness, this.root, this.depth);
     if (!validConsensusWitness) {
       throw new Error('Invalid consensus witness proof');
     }
 
-    const validDisputeWitness = validateWitness(disputedWitness, this.root);
+    const validDisputeWitness = validateWitness(disputedWitness, this.root, this.depth);
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
@@ -167,12 +178,12 @@ export class ChallengeManager {
       throw new Error('Consensus state does not match the consensusWitness');
     }
 
-    const validConsensusWitness = validateWitness(consensusWitness, this.root);
+    const validConsensusWitness = validateWitness(consensusWitness, this.root, this.depth);
     if (!validConsensusWitness) {
       throw new Error('Invalid consensus witness proof');
     }
 
-    const validDisputeWitness = validateWitness(disputedWitness, this.root);
+    const validDisputeWitness = validateWitness(disputedWitness, this.root, this.depth);
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
