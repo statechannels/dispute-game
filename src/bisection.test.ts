@@ -2,7 +2,7 @@ import {ChallengeManager, State, WitnessProof} from './bisection';
 import _ from 'lodash';
 import {AutomaticDisputer} from './auto-disputer';
 import {sha3_256} from 'js-sha3';
-import {generateWitness, generateWitnessFromHashes} from './merkle';
+import {generateWitness} from './merkle';
 
 export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
@@ -29,52 +29,52 @@ test('manual bisection', () => {
     2
   );
   cm.split(
-    generateWitnessFromHashes(cm.stateHashes, 1),
+    generateWitness(cm.stateHashes, 1),
     fingerprints(incorrectStates, [6, 9]),
-    generateWitnessFromHashes(cm.stateHashes, 2),
+    generateWitness(cm.stateHashes, 2),
     proposerId
   );
 
   expect(() =>
     cm.split(
-      generateWitnessFromHashes(cm.stateHashes, 2),
+      generateWitness(cm.stateHashes, 2),
 
       fingerprints(correctStates, [9]),
-      generateWitnessFromHashes(cm.stateHashes, 2),
+      generateWitness(cm.stateHashes, 2),
       challengerId
     )
   ).toThrowError('Consensus witness cannot be the last stored state');
 
   expect(() =>
     cm.split(
-      generateWitnessFromHashes(fingerprints(correctStates, [5, 6, 7]), 1),
+      generateWitness(fingerprints(correctStates, [5, 6, 7]), 1),
       fingerprints(correctStates, [2, 9]),
-      generateWitnessFromHashes(cm.stateHashes, 2),
+      generateWitness(cm.stateHashes, 2),
       challengerId
     )
   ).toThrowError('Consensus witness is not in the stored states');
 
   expect(() =>
     cm.split(
-      generateWitnessFromHashes(cm.stateHashes, 1),
+      generateWitness(cm.stateHashes, 1),
       fingerprints(correctStates, [5, 6]),
-      generateWitnessFromHashes(fingerprints(correctStates, [0, 1, 2]), 2),
+      generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
       challengerId
     )
   ).toThrowError('Invalid dispute witness proof');
 
   cm.split(
-    generateWitnessFromHashes(cm.stateHashes, 0),
+    generateWitness(cm.stateHashes, 0),
     fingerprints(correctStates, [5, 6]),
-    generateWitnessFromHashes(cm.stateHashes, 1),
+    generateWitness(cm.stateHashes, 1),
     challengerId
   );
 
   expect(
     cm.detectFraud(
-      generateWitnessFromHashes(cm.stateHashes, 1),
+      generateWitness(cm.stateHashes, 1),
       {root: 5},
-      generateWitnessFromHashes(cm.stateHashes, 2)
+      generateWitness(cm.stateHashes, 2)
     )
   ).toBe(false);
 });
@@ -90,16 +90,16 @@ test('manual tri-section', () => {
     3
   );
 
-  const consensusWitness = generateWitnessFromHashes(cm.stateHashes, 1);
-  const disputeWitness = generateWitnessFromHashes(cm.stateHashes, 2);
+  const consensusWitness = generateWitness(cm.stateHashes, 1);
+  const disputeWitness = generateWitness(cm.stateHashes, 2);
 
   cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 7]), disputeWitness, proposerId);
 
   expect(
     cm.detectFraud(
-      generateWitnessFromHashes(cm.stateHashes, 1),
+      generateWitness(cm.stateHashes, 1),
       {root: 4},
-      generateWitnessFromHashes(cm.stateHashes, 2)
+      generateWitness(cm.stateHashes, 2)
     )
   ).toBe(true);
 });

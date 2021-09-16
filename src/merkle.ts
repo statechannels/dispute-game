@@ -1,16 +1,7 @@
-import {sha3_256} from 'js-sha3';
 import MerkleTree from 'merkle-tools';
-import {Hash, State, WitnessProof} from './bisection';
+import {Hash, WitnessProof} from './bisection';
 
-export const hashState = (state: State) => sha3_256(state.root.toString());
-
-export function generateWitness(states: State[], index: number): WitnessProof {
-  return generateWitnessFromHashes(
-    states.map(s => hashState(s)),
-    index
-  );
-}
-export function generateWitnessFromHashes(hashes: Hash[], index: number): WitnessProof {
+export function generateWitness(hashes: Hash[], index: number): WitnessProof {
   const tree = new MerkleTree({hashType: 'SHA3-256'});
   tree.addLeaves(hashes, false);
   tree.makeTree();
@@ -18,7 +9,6 @@ export function generateWitnessFromHashes(hashes: Hash[], index: number): Witnes
   const root = tree.getMerkleRoot()?.toString('hex');
   const witness = tree.getLeaf(index)?.toString('hex');
   const proof = tree.getProof(index);
-  
 
   if (!root || !witness || !proof) {
     throw new Error('Invalid node or proof!');

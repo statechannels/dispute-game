@@ -9,7 +9,7 @@ import {
   WitnessProof
 } from './bisection';
 import {fingerprint, Role} from './bisection.test';
-import {generateWitness, generateWitnessFromHashes} from './merkle';
+import {generateWitness} from './merkle';
 
 class AutoDisputerAgent {
   constructor(
@@ -37,8 +37,8 @@ class AutoDisputerAgent {
     const disagreeWithIndex = this.firstDisputedIndex();
     const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
     const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
-    const consensusWitness = generateWitnessFromHashes(this.cm.stateHashes, disagreeWithIndex - 1);
-    const disputedWitness = generateWitnessFromHashes(this.cm.stateHashes, disagreeWithIndex);
+    const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
     if (this.cm.interval() > 1) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
@@ -51,11 +51,8 @@ class AutoDisputerAgent {
     } else {
       const disagreeWithIndex = this.firstDisputedIndex();
 
-      const consensusWitness = generateWitnessFromHashes(
-        this.cm.stateHashes,
-        disagreeWithIndex - 1
-      );
-      const disputedWitness = generateWitnessFromHashes(this.cm.stateHashes, disagreeWithIndex);
+      const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
+      const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
       const detectedFraud =
         this.cm.interval() <= 1
           ? this.cm.detectFraud(
