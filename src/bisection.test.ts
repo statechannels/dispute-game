@@ -93,16 +93,16 @@ test('manual tri-section', () => {
   const consensusWitness = generateWitnessFromHashes(cm.stateHashes, 1);
   const disputeWitness = generateWitnessFromHashes(cm.stateHashes, 2);
 
-  cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 6]), disputeWitness, proposerId);
+  cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 7]), disputeWitness, proposerId);
 
   // These would be pulled from the call data of our opponents transaction
-  const previousStateHashes = _.cloneDeep(cm.stateHashes.slice(1));
+  const previousStateHashes = _.cloneDeep(cm.stateHashes);
 
   expect(
     cm.detectFraud(
-      generateWitnessFromHashes(previousStateHashes, 0),
+      generateWitnessFromHashes(previousStateHashes, 1),
       {root: 4},
-      generateWitnessFromHashes(previousStateHashes, 1)
+      generateWitnessFromHashes(previousStateHashes, 2)
     )
   ).toBe(true);
 });
