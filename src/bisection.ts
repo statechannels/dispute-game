@@ -106,6 +106,13 @@ export class ChallengeManager {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
+    const consensusIndex = this.stateHashes.findIndex(hash => hash === consensusWitness.witness);
+    if (consensusIndex < 0) {
+      throw new Error('Consensus witness is not in the stored states');
+    }
+    if (consensusIndex === this.numSplits) {
+      throw new Error('Consensus witness cannot be the last stored state');
+    }
 
     const validConsensusWitness = validateWitness(consensusWitness, this.root);
     if (!validConsensusWitness) {
@@ -116,7 +123,6 @@ export class ChallengeManager {
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
-    const consensusIndex = this.stateHashes.findIndex(hash => hash === consensusWitness.witness);
     if (hashes[hashes.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
     }
