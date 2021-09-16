@@ -1,5 +1,14 @@
 import MerkleTree from 'merkle-tools';
-import {Hash, WitnessProof} from './bisection';
+import _ from 'lodash';
+import {Proof as MerkleToolsProof} from 'merkle-tools';
+
+type Proof = MerkleToolsProof<string>[];
+
+export type Hash = string;
+export type WitnessProof = {
+  witness: Hash;
+  proof: Proof;
+};
 
 export function generateWitness(hashes: Hash[], index: number): WitnessProof {
   const tree = new MerkleTree({hashType: 'SHA3-256'});

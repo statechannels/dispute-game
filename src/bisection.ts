@@ -1,13 +1,8 @@
 import _ from 'lodash';
-import {Proof as MerkleToolsProof} from 'merkle-tools';
-import {generateRoot, validateWitness} from './merkle';
-type Proof = MerkleToolsProof<string>[];
+import {generateRoot, Hash, validateWitness, WitnessProof} from './merkle';
+
 type Bytes32 = number;
-export type Hash = string;
-export type WitnessProof = {
-  witness: Hash;
-  proof: Proof;
-};
+
 export type State = {root: Bytes32};
 
 // Helper functions for indices <-> steps

@@ -1,15 +1,8 @@
 import _ from 'lodash';
 import MerkleTree from 'merkle-tools';
-import {
-  ChallengeManager,
-  expectedNumOfLeaves,
-  State,
-  stepForIndex,
-  Hash,
-  WitnessProof
-} from './bisection';
+import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
 import {fingerprint, Role} from './bisection.test';
-import {generateWitness} from './merkle';
+import {generateWitness, Hash} from './merkle';
 
 class AutoDisputerAgent {
   constructor(
