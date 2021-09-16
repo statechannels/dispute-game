@@ -69,12 +69,12 @@ test('manual bisection', () => {
     generateWitnessFromHashes(cm.stateHashes, 1),
     challengerId
   );
-  const previousStateHashes = _.cloneDeep(cm.stateHashes);
+
   expect(
     cm.detectFraud(
-      generateWitnessFromHashes(previousStateHashes, 1),
+      generateWitnessFromHashes(cm.stateHashes, 1),
       {root: 5},
-      generateWitnessFromHashes(previousStateHashes, 2)
+      generateWitnessFromHashes(cm.stateHashes, 2)
     )
   ).toBe(false);
 });
@@ -95,14 +95,11 @@ test('manual tri-section', () => {
 
   cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 7]), disputeWitness, proposerId);
 
-  // These would be pulled from the call data of our opponents transaction
-  const previousStateHashes = _.cloneDeep(cm.stateHashes);
-
   expect(
     cm.detectFraud(
-      generateWitnessFromHashes(previousStateHashes, 1),
+      generateWitnessFromHashes(cm.stateHashes, 1),
       {root: 4},
-      generateWitnessFromHashes(previousStateHashes, 2)
+      generateWitnessFromHashes(cm.stateHashes, 2)
     )
   ).toBe(true);
 });
