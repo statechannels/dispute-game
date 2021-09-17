@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import MerkleTree from 'merkle-tools';
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
-import {fingerprint, Role} from './bisection.test';
+import {fingerprint, Role} from './tests/bisection.test';
 import {generateWitness, Hash} from './merkle';
 
 class AutoDisputerAgent {
