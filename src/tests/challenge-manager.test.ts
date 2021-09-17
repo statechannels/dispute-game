@@ -1,4 +1,4 @@
-import {ChallengeManager, State} from '../bisection';
+import {ChallengeManager, State} from '../challenge-manager';
 import _ from 'lodash';
 import {AutomaticDisputer} from '../auto-disputer';
 import {sha3_256} from 'js-sha3';
