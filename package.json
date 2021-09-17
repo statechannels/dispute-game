@@ -6,7 +6,11 @@
     "devDependencies": {
         "@types/jest": "^27.0.1",
         "@types/lodash": "^4.14.172",
+        "@typescript-eslint/eslint-plugin": "^4.31.1",
+        "@typescript-eslint/parser": "^4.31.1",
         "eslint": "^7.32.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-import": "^2.24.2",
         "eslint-plugin-prettier": "^3.4.0",
         "jest": "^27.0.6",
         "prettier": "^2.3.2",
@@ -22,6 +26,7 @@
     },
     "scripts": {
         "test": "jest",
-        "build": "yarn tsc --noEmit"
+        "build": "yarn tsc --noEmit",
+        "lint": "eslint \"*/**/*.ts\""
     }
 }
