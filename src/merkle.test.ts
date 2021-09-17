@@ -23,7 +23,7 @@ describe('validateWitness checks', () => {
 });
 
 describe('Proof to index checks', () => {
-  it('4 level tree', () => {
+  test('4 level tree', () => {
     const tree = new MerkleTree({hashType: 'SHA3-256'});
     tree.addLeaves(['0', '1', '2', '3', '4', '5', '6', '7'].map(sha3_256), false);
     tree.makeTree();
