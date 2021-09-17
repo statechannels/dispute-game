@@ -1,7 +1,7 @@
 import {sha3_256} from 'js-sha3';
 import _ from 'lodash';
-import MerkleTree from 'merkle-tools';
-import {Proof as MerkleToolsProof} from 'merkle-tools';
+
+import MerkleTree, {Proof as MerkleToolsProof} from 'merkle-tools';
 
 type Proof = MerkleToolsProof<string>[];
 
@@ -14,7 +14,8 @@ export type WitnessProof = {
 // Used to create a full binary tree.
 function padLeaves(hashes: Hash[]) {
   const paddingLength = Math.pow(2, Math.ceil(Math.log2(hashes.length))) - hashes.length;
-  const padding = _.range(paddingLength).map(i => sha3_256('0'));
+
+  const padding = _.range(paddingLength).map(_i => sha3_256('0'));
   return [...hashes, ...padding];
 }
 
@@ -59,6 +60,7 @@ export function validateWitness(witnessProof: WitnessProof, root: string, depth:
       `The witness provided is not for a leaf node. Expected ${depth} witness length, recieved ${witnessProof.proof.length}`
     );
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return tree.validateProof(proof as any, witness, root);
 }
 

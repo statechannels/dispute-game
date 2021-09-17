@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
 import {fingerprint, Role} from './tests/challenge-manager.test';
 import {generateWitness, Hash} from './merkle';
@@ -111,7 +109,7 @@ export class AutomaticDisputer {
     }
   }
 
-  public get caller() {
+  public get caller(): string {
     return this.cm.caller;
   }
 

@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import {generateRoot, Hash, proofToIndex, validateWitness, WitnessProof} from './merkle';
 
 type Bytes32 = number;
@@ -86,7 +85,7 @@ export class ChallengeManager {
   /**
    * This only works with full, binary trees. For now, we are padding the leaves with leaves of sha256('0').
    */
-  public get depth() {
+  public get depth(): number {
     return Math.ceil(Math.log2(this.expectedNumLeaves()));
   }
 
@@ -135,7 +134,7 @@ export class ChallengeManager {
     hashes: Hash[],
     disputedWitness: WitnessProof,
     caller: string
-  ): any {
+  ): void {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
