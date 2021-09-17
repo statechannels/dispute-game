@@ -13,11 +13,14 @@ describe('validateWitness checks', () => {
     expect(validateWitness(witnessProof, invalidRoot, 2)).toBe(false);
   });
 
-  test('it returns true  for a valid proof and root', () => {
-    const validHashes = ['a', 'b', 'c'].map(sha3_256);
+  test('it returns true for a valid proof and root', () => {
+    const depth = 10;
+    const validHashes = _.range(Math.pow(2, depth)).map(i => sha3_256(i.toString()));
     const validRoot = generateRoot(validHashes);
-    const witnessProof = generateWitness(validHashes, 2);
 
-    expect(validateWitness(witnessProof, validRoot, 2)).toBe(true);
+    for (let index = 0; index < depth; index++) {
+      const witnessProof = generateWitness(validHashes, index);
+      expect(validateWitness(witnessProof, validRoot, depth)).toBe(true);
+    }
   });
 });
