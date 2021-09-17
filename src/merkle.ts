@@ -18,6 +18,18 @@ function padLeaves(hashes: Hash[]) {
   return [...hashes, ...padding];
 }
 
+export function proofToIndex(proof: Proof): number {
+  let index = 0;
+  let pow = 0;
+  for (const sibling of proof) {
+    if ('left' in sibling) {
+      index += Math.pow(2, pow);
+    }
+    pow += 1;
+  }
+  return index;
+}
+
 export function generateWitness(hashes: Hash[], index: number): WitnessProof {
   const tree = new MerkleTree({hashType: 'SHA3-256'});
   tree.addLeaves(padLeaves(hashes), false);
