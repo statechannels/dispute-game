@@ -29,18 +29,18 @@ test('manual bisection', () => {
     2
   );
   cm.split(
-    generateWitness(cm.stateHashes, 1),
+    generateWitness(cm.lastCalldata, 1),
     fingerprints(incorrectStates, [6, 9]),
-    generateWitness(cm.stateHashes, 2),
+    generateWitness(cm.lastCalldata, 2),
     proposerId
   );
 
   expect(() =>
     cm.split(
-      generateWitness(cm.stateHashes, 2),
+      generateWitness(cm.lastCalldata, 2),
 
       fingerprints(correctStates, [9]),
-      generateWitness(cm.stateHashes, 2),
+      generateWitness(cm.lastCalldata, 2),
       challengerId
     )
   ).toThrowError('Consensus witness cannot be the last stored state');
@@ -49,7 +49,7 @@ test('manual bisection', () => {
     cm.split(
       generateWitness(fingerprints(correctStates, [5, 6, 7]), 1),
       fingerprints(correctStates, [2, 9]),
-      generateWitness(cm.stateHashes, 2),
+      generateWitness(cm.lastCalldata, 2),
       challengerId
     )
   ).toThrowError('Invalid consensus witness proof');
@@ -58,14 +58,14 @@ test('manual bisection', () => {
     cm.split(
       generateWitness(fingerprints(incorrectStates, [4, 5, 6]), 0),
       fingerprints(correctStates, [5, 6]),
-      generateWitness(cm.stateHashes, 2),
+      generateWitness(cm.lastCalldata, 2),
       challengerId
     )
   ).toThrowError('Invalid consensus witness proof');
 
   expect(() =>
     cm.split(
-      generateWitness(cm.stateHashes, 1),
+      generateWitness(cm.lastCalldata, 1),
       fingerprints(correctStates, [5, 6]),
       generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
       challengerId
@@ -73,17 +73,17 @@ test('manual bisection', () => {
   ).toThrowError('Invalid dispute witness proof');
 
   cm.split(
-    generateWitness(cm.stateHashes, 0),
+    generateWitness(cm.lastCalldata, 0),
     fingerprints(correctStates, [5, 6]),
-    generateWitness(cm.stateHashes, 1),
+    generateWitness(cm.lastCalldata, 1),
     challengerId
   );
 
   expect(
     cm.detectFraud(
-      generateWitness(cm.stateHashes, 1),
+      generateWitness(cm.lastCalldata, 1),
       {root: 5},
-      generateWitness(cm.stateHashes, 2)
+      generateWitness(cm.lastCalldata, 2)
     )
   ).toBe(false);
 });
@@ -100,16 +100,16 @@ test('manual tri-section', () => {
     3
   );
 
-  const consensusWitness = generateWitness(cm.stateHashes, 1);
-  const disputeWitness = generateWitness(cm.stateHashes, 2);
+  const consensusWitness = generateWitness(cm.lastCalldata, 1);
+  const disputeWitness = generateWitness(cm.lastCalldata, 2);
 
   cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 7]), disputeWitness, proposerId);
 
   expect(
     cm.detectFraud(
-      generateWitness(cm.stateHashes, 1),
+      generateWitness(cm.lastCalldata, 1),
       {root: 4},
-      generateWitness(cm.stateHashes, 2)
+      generateWitness(cm.lastCalldata, 2)
     )
   ).toBe(true);
 });
