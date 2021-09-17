@@ -1,8 +1,8 @@
-import {ChallengeManager, State} from './bisection';
+import {ChallengeManager, State} from '../bisection';
 import _ from 'lodash';
-import {AutomaticDisputer} from './auto-disputer';
+import {AutomaticDisputer} from '../auto-disputer';
 import {sha3_256} from 'js-sha3';
-import {generateWitness} from './merkle';
+import {generateWitness} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
