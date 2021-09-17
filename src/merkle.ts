@@ -14,8 +14,8 @@ export type WitnessProof = {
 // Used to create a full binary tree.
 function padLeaves(hashes: Hash[]) {
   const paddingLength = Math.pow(2, Math.ceil(Math.log2(hashes.length))) - hashes.length;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const padding = _.range(paddingLength).map(i => sha3_256('0'));
+
+  const padding = _.range(paddingLength).map(_i => sha3_256('0'));
   return [...hashes, ...padding];
 }
 

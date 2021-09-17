@@ -12,7 +12,10 @@ module.exports = {
   overrides: [
     {
       files: ['**/*.ts'],
-      extends: ['plugin:@typescript-eslint/recommended']
+      extends: ['plugin:@typescript-eslint/recommended'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': [1, {argsIgnorePattern: '^_', varsIgnorePattern: '^_'}]
+      }
     }
   ]
 };
