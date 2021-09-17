@@ -56,6 +56,15 @@ test('manual bisection', () => {
 
   expect(() =>
     cm.split(
+      generateWitness(fingerprints(incorrectStates, [4, 5, 6]), 0),
+      fingerprints(correctStates, [5, 6]),
+      generateWitness(cm.stateHashes, 2),
+      challengerId
+    )
+  ).toThrowError('Invalid consensus witness proof');
+
+  expect(() =>
+    cm.split(
       generateWitness(cm.stateHashes, 1),
       fingerprints(correctStates, [5, 6]),
       generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
