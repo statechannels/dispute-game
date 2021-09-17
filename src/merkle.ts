@@ -18,6 +18,11 @@ function padLeaves(hashes: Hash[]) {
   return [...hashes, ...padding];
 }
 
+/**
+ * Given a merkle proof for a binary tree, computes the index of the node for the proof.
+ * @param proof A list of siblings ordered from bottom of the tree to the top.
+ * @returns Index of the node.
+ */
 export function proofToIndex(proof: Proof): number {
   let index = 0;
   let pow = 0;
