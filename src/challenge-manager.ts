@@ -1,4 +1,4 @@
-import {generateRoot, Hash, proofToIndex, validateWitness, WitnessProof} from './merkle';
+import {generateRoot, Hash, validateWitness, WitnessProof} from './merkle';
 
 type Bytes32 = number;
 
@@ -105,8 +105,8 @@ export class ChallengeManager {
     consensusWitness: WitnessProof,
     disputedWitness: WitnessProof
   ): {consensusIndex: number; disputedIndex: number} {
-    const consensusIndex = proofToIndex(consensusWitness.proof);
-    const disputedIndex = proofToIndex(disputedWitness.proof);
+    const consensusIndex = consensusWitness.index;
+    const disputedIndex = disputedWitness.index;
 
     if (consensusIndex >= this.expectedNumLeaves() - 1) {
       throw new Error('Consensus witness cannot be the last stored state');
