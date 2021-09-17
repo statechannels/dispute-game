@@ -67,7 +67,7 @@ export function expectedNumOfLeaves(
 export class ChallengeManager {
   public consensusStep = 0;
   public root: Hash;
-  // This mimics the transaction calldata on Ethereum
+  // This mimics the transaction calldata on Ethereum. This should never be read internally.
   public lastCalldata: Hash[];
 
   constructor(
