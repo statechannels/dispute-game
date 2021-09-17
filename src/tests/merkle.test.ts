@@ -1,7 +1,7 @@
 import {sha3_256} from 'js-sha3';
 import _ from 'lodash';
 import MerkleTree from 'merkle-tools';
-import {generateRoot, generateWitness, proofToIndex, validateWitness} from './merkle';
+import {generateRoot, generateWitness, proofToIndex, validateWitness} from '../merkle';
 
 describe('validateWitness checks', () => {
   test('it returns false  when the proof is invalid for the root', () => {
