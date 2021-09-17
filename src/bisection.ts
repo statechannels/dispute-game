@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import {generateRoot, Hash, validateWitness, WitnessProof} from './merkle';
+import {generateRoot, Hash, proofToIndex, validateWitness, WitnessProof} from './merkle';
 
 type Bytes32 = number;
 
@@ -111,11 +111,10 @@ export class ChallengeManager {
     if (this.interval() <= 1) {
       throw new Error('States cannot be split further');
     }
-    const consensusIndex = this.stateHashes.findIndex(hash => hash === consensusWitness.witness);
-    if (consensusIndex < 0) {
-      throw new Error('Consensus witness is not in the stored states');
-    }
-    if (consensusIndex === this.numSplits) {
+    const consensusIndex = proofToIndex(consensusWitness.proof);
+    const disputedIndex = proofToIndex(disputedWitness.proof);
+
+    if (consensusIndex >= this.expectedNumLeaves() - 1) {
       throw new Error('Consensus witness cannot be the last stored state');
     }
 
@@ -128,6 +127,11 @@ export class ChallengeManager {
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
+
+    if (consensusIndex + 1 !== disputedIndex) {
+      throw new Error('Disputed state hash must be the next leaf after consensus state hash');
+    }
+
     if (hashes[hashes.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
     }
@@ -162,22 +166,6 @@ export class ChallengeManager {
   ): boolean {
     if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
 
-    const witnessIndex = this.stateHashes.findIndex(state => state === consensusWitness.witness);
-    if (witnessIndex < 0) {
-      throw new Error('Witness cannot be found in stored states');
-    }
-    if (witnessIndex === this.stateHashes.length - 1) {
-      throw new Error('Witness cannot be the last state');
-    }
-
-    if (this.stateHashes[witnessIndex + 1] !== disputedWitness.witness) {
-      throw new Error('Disputed witness does not match stored states');
-    }
-
-    if (this.fingerprint(consensusState) !== consensusWitness.witness) {
-      throw new Error('Consensus state does not match the consensusWitness');
-    }
-
     const validConsensusWitness = validateWitness(consensusWitness, this.root, this.depth);
     if (!validConsensusWitness) {
       throw new Error('Invalid consensus witness proof');
@@ -188,7 +176,22 @@ export class ChallengeManager {
       throw new Error('Invalid dispute witness proof');
     }
 
+    const consensusIndex = proofToIndex(consensusWitness.proof);
+    const disputedIndex = proofToIndex(disputedWitness.proof);
+
+    if (consensusIndex >= this.expectedNumLeaves() - 1) {
+      throw new Error('Consensus witness cannot be the last stored state');
+    }
+
+    if (consensusIndex + 1 !== disputedIndex) {
+      throw new Error('Disputed state hash must be the next leaf after consensus state hash');
+    }
+
+    if (this.fingerprint(consensusState) !== consensusWitness.witness) {
+      throw new Error('Consensus state does not match the consensusWitness');
+    }
+
     const correctWitnessAfter = this.progress(consensusState);
-    return this.fingerprint(correctWitnessAfter) !== this.stateHashes[witnessIndex + 1];
+    return this.fingerprint(correctWitnessAfter) !== disputedWitness.witness;
   }
 }

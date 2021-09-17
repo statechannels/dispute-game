@@ -52,7 +52,7 @@ test('manual bisection', () => {
       generateWitness(cm.stateHashes, 2),
       challengerId
     )
-  ).toThrowError('Consensus witness is not in the stored states');
+  ).toThrowError('Invalid consensus witness proof');
 
   expect(() =>
     cm.split(
