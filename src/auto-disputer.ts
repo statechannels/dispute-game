@@ -1,6 +1,8 @@
 import _ from 'lodash';
-import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex, Hash} from './bisection';
+import MerkleTree from 'merkle-tools';
+import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './bisection';
 import {fingerprint, Role} from './bisection.test';
+import {generateWitness, Hash} from './merkle';
 
 class AutoDisputerAgent {
   constructor(
@@ -28,26 +30,22 @@ class AutoDisputerAgent {
     const disagreeWithIndex = this.firstDisputedIndex();
     const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
     const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
-
+    const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
     if (this.cm.interval() > 1) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
       // We only want the leaves so we slice off the parent
       leaves = leaves.slice(1);
 
-      this.cm.split(
-        {witness: this.cm.stateHashes[disagreeWithIndex - 1]},
-        leaves.map(fingerprint),
-        {witness: this.cm.stateHashes[disagreeWithIndex]},
-        this.role
-      );
+      this.cm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.role);
 
       return {complete: false, detectedFraud: false};
     } else {
       const disagreeWithIndex = this.firstDisputedIndex();
-      const consensusWitness = {witness: this.cm.stateHashes[disagreeWithIndex - 1]};
-      const disputedWitness = {witness: this.cm.stateHashes[disagreeWithIndex]};
 
+      const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
+      const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
       const detectedFraud =
         this.cm.interval() <= 1
           ? this.cm.detectFraud(
@@ -70,6 +68,7 @@ class AutoDisputerAgent {
     throw 'Did not find disputed state';
   }
 }
+
 export class AutomaticDisputer {
   private cm: ChallengeManager;
   challenger: AutoDisputerAgent;

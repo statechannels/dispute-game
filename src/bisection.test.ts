@@ -1,29 +1,21 @@
-import {ChallengeManager, State, Witness} from './bisection';
+import {ChallengeManager, State} from './bisection';
 import _ from 'lodash';
 import {AutomaticDisputer} from './auto-disputer';
 import {sha3_256} from 'js-sha3';
+import {generateWitness} from './merkle';
 
 export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
 const proposerId = 'proposer' as const;
-
 function states(values: number[], indices: number[]): State[] {
   return indices.map(step => ({root: values[step]}));
 }
-
-function state(values: number[], index: number): State {
-  return {root: values[index]};
-}
-
-export const fingerprint = (state: State) => sha3_256(state.root.toString());
 
 function fingerprints(values: number[], indices: number[]) {
   return states(values, indices).map(fingerprint);
 }
 
-function witness(values: number[], index: number): Witness {
-  return {witness: fingerprint(state(values, index))};
-}
+export const fingerprint = (state: State) => sha3_256(state.root.toString());
 
 test('manual bisection', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
@@ -36,52 +28,65 @@ test('manual bisection', () => {
     9,
     2
   );
-
   cm.split(
-    witness(incorrectStates, 4),
+    generateWitness(cm.stateHashes, 1),
     fingerprints(incorrectStates, [6, 9]),
-    witness(correctStates, 9),
+    generateWitness(cm.stateHashes, 2),
     proposerId
   );
 
   expect(() =>
     cm.split(
-      witness(incorrectStates, 9),
+      generateWitness(cm.stateHashes, 2),
+
       fingerprints(correctStates, [9]),
-      witness(incorrectStates, 9),
+      generateWitness(cm.stateHashes, 2),
       challengerId
     )
   ).toThrowError('Consensus witness cannot be the last stored state');
 
   expect(() =>
     cm.split(
-      witness(correctStates, 1),
+      generateWitness(fingerprints(correctStates, [5, 6, 7]), 1),
       fingerprints(correctStates, [2, 9]),
-      witness(incorrectStates, 9),
+      generateWitness(cm.stateHashes, 2),
       challengerId
     )
   ).toThrowError('Consensus witness is not in the stored states');
 
   expect(() =>
     cm.split(
-      witness(correctStates, 4),
+      generateWitness(fingerprints(incorrectStates, [4, 5, 6]), 0),
       fingerprints(correctStates, [5, 6]),
-      witness(correctStates, 6),
+      generateWitness(cm.stateHashes, 2),
       challengerId
     )
-  ).toThrowError('Disputed witness does not match');
+  ).toThrowError('Invalid consensus witness proof');
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.stateHashes, 1),
+      fingerprints(correctStates, [5, 6]),
+      generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
+      challengerId
+    )
+  ).toThrowError('Invalid dispute witness proof');
 
   cm.split(
-    witness(correctStates, 4),
+    generateWitness(cm.stateHashes, 0),
     fingerprints(correctStates, [5, 6]),
-    witness(incorrectStates, 6),
+    generateWitness(cm.stateHashes, 1),
     challengerId
   );
-  expect(cm.detectFraud(witness(correctStates, 5), {root: 5}, witness(correctStates, 6))).toBe(
-    false
-  );
-});
 
+  expect(
+    cm.detectFraud(
+      generateWitness(cm.stateHashes, 1),
+      {root: 5},
+      generateWitness(cm.stateHashes, 2)
+    )
+  ).toBe(false);
+});
 test('manual tri-section', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -94,19 +99,22 @@ test('manual tri-section', () => {
     3
   );
 
-  cm.split(
-    witness(incorrectStates, 3),
-    fingerprints(incorrectStates, [4, 5, 6]),
-    witness(correctStates, 6),
-    proposerId
-  );
-  expect(cm.detectFraud(witness(incorrectStates, 4), {root: 4}, witness(incorrectStates, 5))).toBe(
-    true
-  );
+  const consensusWitness = generateWitness(cm.stateHashes, 1);
+  const disputeWitness = generateWitness(cm.stateHashes, 2);
+
+  cm.split(consensusWitness, fingerprints(incorrectStates, [4, 5, 7]), disputeWitness, proposerId);
+
+  expect(
+    cm.detectFraud(
+      generateWitness(cm.stateHashes, 1),
+      {root: 4},
+      generateWitness(cm.stateHashes, 2)
+    )
+  ).toBe(true);
 });
 
-const amountOfStates = 90;
-const maxSplits = 90;
+const amountOfStates = 25;
+const maxSplits = 25;
 
 test('Fuzzy testing', () => {
   for (let errorIndex = 1; errorIndex < amountOfStates; errorIndex++) {
