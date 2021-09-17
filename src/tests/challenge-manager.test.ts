@@ -1,7 +1,8 @@
-import {ChallengeManager, State} from '../challenge-manager';
 import _ from 'lodash';
-import {AutomaticDisputer} from '../auto-disputer';
 import {sha3_256} from 'js-sha3';
+
+import {ChallengeManager, State} from '../challenge-manager';
+import {AutomaticDisputer} from '../auto-disputer';
 import {generateWitness} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
@@ -15,7 +16,7 @@ function fingerprints(values: number[], indices: number[]) {
   return states(values, indices).map(fingerprint);
 }
 
-export const fingerprint = (state: State) => sha3_256(state.root.toString());
+export const fingerprint = (state: State): string => sha3_256(state.root.toString());
 
 test('manual bisection', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];

@@ -1,7 +1,7 @@
 import {sha3_256} from 'js-sha3';
 import _ from 'lodash';
 import MerkleTree from 'merkle-tools';
-import {generateRoot, generateWitness, proofToIndex, validateWitness} from '../merkle';
+import {generateRoot, generateWitness, validateWitness, proofToIndex} from '../merkle';
 
 describe('validateWitness checks', () => {
   test('it returns false  when the proof is invalid for the root', () => {
@@ -30,6 +30,7 @@ describe('Proof to index checks', () => {
 
     for (const index of _.range(7)) {
       const proof = tree.getProof(index);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(proofToIndex(proof!)).toEqual(index);
     }
   });
