@@ -4,7 +4,7 @@ import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './chal
 import {fingerprint, Role} from './tests/challenge-manager.test';
 import {generateWitness, Hash} from './merkle';
 
-class AutoDisputerAgent {
+export class AutoDisputerAgent {
   constructor(
     public role: Role,
     public cm: ChallengeManager,
