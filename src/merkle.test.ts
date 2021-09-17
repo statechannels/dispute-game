@@ -17,4 +17,3 @@ test('it returns true  for a valid proof and root', () => {
 
   expect(validateWitness(witnessProof, validRoot, 2)).toBe(true);
 });
-14;
