@@ -14,11 +14,11 @@ describe('validateWitness checks', () => {
   });
 
   test('it returns true for a valid proof and root', () => {
-    const depth = 10;
+    const depth = 6;
     const validHashes = _.range(Math.pow(2, depth)).map(i => sha3_256(i.toString()));
     const validRoot = generateRoot(validHashes);
 
-    for (let index = 0; index < depth; index++) {
+    for (let index = 0; index < validHashes.length; index++) {
       const witnessProof = generateWitness(validHashes, index);
       expect(validateWitness(witnessProof, validRoot, depth)).toBe(true);
     }
