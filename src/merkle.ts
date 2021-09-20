@@ -47,10 +47,11 @@ export function validateWitness(witnessProof: WitnessProof, root: string, depth:
   }
 
   const convertedProof = generateMerkleToolsProof(nodes, index);
-  return tree.validateProof(convertedProof, witness, root);
+  // TODO: The MerkleTools library isn't typed properly so we force a cast here
+  return tree.validateProof(convertedProof as unknown as MerkleToolsProof<string>, witness, root);
 }
 
-function generateMerkleToolsProof(nodes: Hash[], index: number): MerkleToolsProof<string> {
+function generateMerkleToolsProof(nodes: Hash[], index: number): MerkleToolsProof<string>[] {
   const merkleToolsProof: MerkleToolsProof<string>[] = [];
 
   for (let i = 0; i < nodes.length; i++) {
@@ -63,8 +64,7 @@ function generateMerkleToolsProof(nodes: Hash[], index: number): MerkleToolsProo
     index = Math.floor(index / 2);
   }
 
-  // TODO: The MerkleTools library isn't typed properly so we force a cast here
-  return merkleToolsProof as unknown as MerkleToolsProof<string>;
+  return merkleToolsProof;
 }
 
 export function generateRoot(stateHashes: Hash[]): Hash {
