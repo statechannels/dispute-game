@@ -30,6 +30,7 @@ export function stepForIndex(
     interval(consensusStep, disputedStep, numbSplits) > 1
       ? interval(consensusStep, disputedStep, numbSplits)
       : 1;
+
   return consensusStep + Math.floor(stepDelta * index);
 }
 
@@ -42,7 +43,7 @@ export function stepForIndex(
  */
 export function interval(consensusStep: number, disputedStep: number, numSplits: number): number {
   const stepsBetweenConsensusAndDisputed = disputedStep - consensusStep;
-  return stepsBetweenConsensusAndDisputed / numSplits;
+  return Math.floor(stepsBetweenConsensusAndDisputed / numSplits);
 }
 
 /**
