@@ -66,19 +66,22 @@ export function expectedNumOfLeaves(
 export class ChallengeManager {
   public consensusStep = 0;
   public root: Hash;
+
+  // This mimics the transaction calldata on Ethereum. This should never be read internally.
+  public lastCalldata: Hash[];
+
   constructor(
-    // These states are supplied by the challenger.
-    // In the future, only the hash of the merkle root will be stored
-    public stateHashes: Hash[],
+    stateHashes: Hash[],
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Hash,
     public caller: string,
     public disputedStep: number,
     public numSplits: number
   ) {
-    if (this.stateHashes.length !== numSplits + 1) {
+    if (stateHashes.length !== numSplits + 1) {
       throw new Error(`Expected ${numSplits + 1} number of states, recieved ${stateHashes.length}`);
     }
+    this.lastCalldata = stateHashes;
     this.root = generateRoot(stateHashes);
   }
 
@@ -160,12 +163,14 @@ export class ChallengeManager {
       throw new Error(`Expected ${intermediateLeaves} number of states, recieved ${hashes.length}`);
     }
 
+    const stateHashes = [consensusWitness.witness, ...hashes];
+
     // Effects
     this.consensusStep = newConsensusStep;
     this.disputedStep = newDisputedStep;
-    this.stateHashes = [consensusWitness.witness, ...hashes];
-    this.root = generateRoot(this.stateHashes);
+    this.root = generateRoot(stateHashes);
     this.caller = caller;
+    this.lastCalldata = stateHashes;
   }
 
   detectFraud(
