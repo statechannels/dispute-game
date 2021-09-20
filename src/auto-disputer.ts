@@ -28,8 +28,8 @@ export class AutoDisputerAgent {
     const disagreeWithIndex = this.firstDisputedIndex();
     const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
     const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
-    const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
-    const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
+    const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
     if (this.cm.interval() > 1) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
@@ -42,8 +42,8 @@ export class AutoDisputerAgent {
     } else {
       const disagreeWithIndex = this.firstDisputedIndex();
 
-      const consensusWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex - 1);
-      const disputedWitness = generateWitness(this.cm.stateHashes, disagreeWithIndex);
+      const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
+      const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
       const detectedFraud =
         this.cm.interval() <= 1
           ? this.cm.detectFraud(
@@ -57,9 +57,9 @@ export class AutoDisputerAgent {
   }
 
   private firstDisputedIndex(): number {
-    for (let i = 0; i < this.cm.stateHashes.length; i++) {
+    for (let i = 0; i < this.cm.lastCalldata.length; i++) {
       const step = this.cm.stepForIndex(i);
-      if (this.cm.stateHashes[i] !== fingerprint(this.myStates[step])) {
+      if (this.cm.lastCalldata[i] !== fingerprint(this.myStates[step])) {
         return i;
       }
     }
@@ -122,6 +122,6 @@ export class AutomaticDisputer {
       detectedFraud = result.detectedFraud;
     }
 
-    return {detectedFraud, states: this.cm.stateHashes};
+    return {detectedFraud, states: this.cm.lastCalldata};
   }
 }
