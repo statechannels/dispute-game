@@ -136,7 +136,7 @@ export class ChallengeManager {
     disputedWitness: WitnessProof,
     caller: string
   ): void {
-    if (this.interval() <= 1) {
+    if (this.interval() < 1) {
       throw new Error('States cannot be split further');
     }
 
