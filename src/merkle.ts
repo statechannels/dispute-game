@@ -3,12 +3,11 @@ import _ from 'lodash';
 
 import MerkleTree, {Proof as MerkleToolsProof} from 'merkle-tools';
 
-type Proof = MerkleToolsProof<string>[];
-
 export type Hash = string;
 export type WitnessProof = {
   witness: Hash;
-  proof: Proof;
+  nodes: Hash[];
+  index: number;
 };
 
 // Used to create a full binary tree.
@@ -19,23 +18,6 @@ function padLeaves(hashes: Hash[]) {
   return [...hashes, ...padding];
 }
 
-/**
- * Given a merkle proof for a binary tree, computes the index of the node for the proof.
- * @param proof A list of siblings ordered from bottom of the tree to the top.
- * @returns Index of the node.
- */
-export function proofToIndex(proof: Proof): number {
-  let index = 0;
-  let pow = 0;
-  for (const sibling of proof) {
-    if ('left' in sibling) {
-      index += Math.pow(2, pow);
-    }
-    pow += 1;
-  }
-  return index;
-}
-
 export function generateWitness(hashes: Hash[], index: number): WitnessProof {
   const tree = new MerkleTree({hashType: 'SHA3-256'});
   tree.addLeaves(padLeaves(hashes), false);
@@ -43,25 +25,46 @@ export function generateWitness(hashes: Hash[], index: number): WitnessProof {
 
   const root = tree.getMerkleRoot()?.toString('hex');
   const witness = tree.getLeaf(index)?.toString('hex');
-  const proof = tree.getProof(index);
+  const proof = tree.getProof(index, false);
 
   if (!root || !witness || !proof) {
     throw new Error('Invalid node or proof!');
   }
-  return {witness, proof};
+
+  const nodes = proof.map(p => ('left' in p ? p.left : p.right));
+
+  return {witness, nodes, index};
 }
 
 export function validateWitness(witnessProof: WitnessProof, root: string, depth: number): boolean {
   const tree = new MerkleTree({hashType: 'SHA3-256'});
-  const {proof, witness} = witnessProof;
+  const {index, nodes, witness} = witnessProof;
 
-  if (witnessProof.proof.length !== depth) {
+  if (witnessProof.nodes.length !== depth) {
     throw new Error(
-      `The witness provided is not for a leaf node. Expected ${depth} witness length, recieved ${witnessProof.proof.length}`
+      `The witness provided is not for a leaf node. Expected ${depth} witness length, recieved ${witnessProof.nodes.length}`
     );
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return tree.validateProof(proof as any, witness, root);
+
+  const convertedProof = generateMerkleToolsProof(nodes, index);
+  // TODO: The MerkleTools library isn't typed properly so we force a cast here
+  return tree.validateProof(convertedProof as unknown as MerkleToolsProof<string>, witness, root);
+}
+
+function generateMerkleToolsProof(nodes: Hash[], index: number): MerkleToolsProof<string>[] {
+  const merkleToolsProof: MerkleToolsProof<string>[] = [];
+
+  for (let i = 0; i < nodes.length; i++) {
+    if (index % 2 !== 0) {
+      merkleToolsProof.push({left: nodes[i]});
+    } else {
+      merkleToolsProof.push({right: nodes[i]});
+    }
+
+    index = Math.floor(index / 2);
+  }
+
+  return merkleToolsProof;
 }
 
 export function generateRoot(stateHashes: Hash[]): Hash {
