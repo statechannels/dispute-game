@@ -4,18 +4,41 @@ pragma solidity 0.8.7;
 
 library MerkleHelper {
     function generateRoot(bytes32[] memory leaves) external pure returns (bytes32) {
-        if (leaves.length > 0) {
-            return keccak256(abi.encode(0));
+        bytes32[] memory paddedLeaves = padLeaves(leaves);
+        uint256 treeDepth = log2(paddedLeaves.length);
+        for (uint256 depth = treeDepth - 1; depth > 0; depth--) {
+            for (uint256 index = 0; index < 2**treeDepth; index = index + 2) {
+                bytes32 parentValue = keccak256(
+                    abi.encodePacked(paddedLeaves[index], paddedLeaves[index + 1])
+                );
+                paddedLeaves[index] = parentValue;
+            }
         }
-        return keccak256(abi.encode(0));
+
+        return paddedLeaves[0];
     }
 
-    function validateWitness(
-        WitnessProof calldata proof,
-        bytes32 root,
-        uint256 depth
-    ) external pure returns (bool) {
-        return false;
+    function validateWitness(WitnessProof calldata proof, bytes32 root)
+        external
+        pure
+        returns (bool)
+    {
+        bytes32[] memory paddedLeaves = padLeaves(proof.nodes);
+        uint256 depth = log2(paddedLeaves.length);
+
+        for (uint256 i = depth - 1; i > 0; i--) {
+            for (uint256 index = 0; index < 2**depth; index = index + 2) {
+                bytes32 parentValue = keccak256(
+                    abi.encodePacked(paddedLeaves[index], paddedLeaves[index + 1])
+                );
+                paddedLeaves[index] = parentValue;
+            }
+        }
+
+        if (paddedLeaves[0] != root) {
+            return false;
+        }
+        return true;
     }
 
     function padLeaves(bytes32[] memory hashes) private pure returns (bytes32[] memory) {
@@ -28,7 +51,7 @@ library MerkleHelper {
                 paddedTree[i] = hashes[i];
             } else {
                 // Add a dummy entry
-                paddedTree[i] = keccak256(abi.encode(0));
+                paddedTree[i] = keccak256(abi.encodePacked());
             }
         }
 

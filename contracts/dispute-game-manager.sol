@@ -39,12 +39,12 @@ contract DisputeGameManager {
             revert('Consensus witness cannot be the last stored state');
         }
 
-        bool validConsensusWitness = MerkleHelper.validateWitness(consensusProof, root, depth());
+        bool validConsensusWitness = MerkleHelper.validateWitness(consensusProof, root);
         if (!validConsensusWitness) {
             revert('Invalid consensus witness proof');
         }
 
-        bool validDisputeWitness = MerkleHelper.validateWitness(disputedProof, root, depth());
+        bool validDisputeWitness = MerkleHelper.validateWitness(disputedProof, root);
         if (!validDisputeWitness) {
             revert('Invalid dispute witness proof');
         }
