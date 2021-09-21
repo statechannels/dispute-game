@@ -7,5 +7,14 @@ module.exports = {
    * merkle.ts IS a utility used by challenge manager. But this utility is fairly specific
    *  to merkle-tools dependency. So it is ignored for now.
    */
-  collectCoverageFrom: ['src/**/*.{js,ts}', '!src/{index,merkle,auto-disputer}.ts']
+  collectCoverage: true,
+  collectCoverageFrom: ['src/**/*.{js,ts}', '!src/{index,merkle,auto-disputer}.ts'],
+  coverageThreshold: {
+    global: {
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100
+    }
+  }
 };
