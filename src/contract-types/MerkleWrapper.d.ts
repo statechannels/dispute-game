@@ -18,10 +18,9 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
-interface MerkleHelperInterface extends ethers.utils.Interface {
+interface MerkleWrapperInterface extends ethers.utils.Interface {
   functions: {
     "generateRoot(bytes32[])": FunctionFragment;
-    "log2(uint256)": FunctionFragment;
     "validateWitness(tuple,bytes32)": FunctionFragment;
   };
 
@@ -29,7 +28,6 @@ interface MerkleHelperInterface extends ethers.utils.Interface {
     functionFragment: "generateRoot",
     values: [BytesLike[]]
   ): string;
-  encodeFunctionData(functionFragment: "log2", values: [BigNumberish]): string;
   encodeFunctionData(
     functionFragment: "validateWitness",
     values: [
@@ -42,7 +40,6 @@ interface MerkleHelperInterface extends ethers.utils.Interface {
     functionFragment: "generateRoot",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "log2", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "validateWitness",
     data: BytesLike
@@ -51,7 +48,7 @@ interface MerkleHelperInterface extends ethers.utils.Interface {
   events: {};
 }
 
-export class MerkleHelper extends BaseContract {
+export class MerkleWrapper extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -92,15 +89,13 @@ export class MerkleHelper extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: MerkleHelperInterface;
+  interface: MerkleWrapperInterface;
 
   functions: {
     generateRoot(
       leaves: BytesLike[],
       overrides?: CallOverrides
     ): Promise<[string]>;
-
-    log2(x: BigNumberish, overrides?: CallOverrides): Promise<[BigNumber]>;
 
     validateWitness(
       proof: { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
@@ -110,8 +105,6 @@ export class MerkleHelper extends BaseContract {
   };
 
   generateRoot(leaves: BytesLike[], overrides?: CallOverrides): Promise<string>;
-
-  log2(x: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
   validateWitness(
     proof: { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
@@ -124,8 +117,6 @@ export class MerkleHelper extends BaseContract {
       leaves: BytesLike[],
       overrides?: CallOverrides
     ): Promise<string>;
-
-    log2(x: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
 
     validateWitness(
       proof: { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
@@ -142,8 +133,6 @@ export class MerkleHelper extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    log2(x: BigNumberish, overrides?: CallOverrides): Promise<BigNumber>;
-
     validateWitness(
       proof: { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
       root: BytesLike,
@@ -154,11 +143,6 @@ export class MerkleHelper extends BaseContract {
   populateTransaction: {
     generateRoot(
       leaves: BytesLike[],
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    log2(
-      x: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

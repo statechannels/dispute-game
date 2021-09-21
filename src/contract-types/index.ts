@@ -3,8 +3,10 @@
 /* eslint-disable */
 export type { DisputeGameManager } from "./DisputeGameManager";
 export type { IndexMath } from "./IndexMath";
+export type { MerkleWrapper } from "./MerkleWrapper";
 export type { MerkleHelper } from "./MerkleHelper";
 
 export { DisputeGameManager__factory } from "./factories/DisputeGameManager__factory";
 export { IndexMath__factory } from "./factories/IndexMath__factory";
+export { MerkleWrapper__factory } from "./factories/MerkleWrapper__factory";
 export { MerkleHelper__factory } from "./factories/MerkleHelper__factory";

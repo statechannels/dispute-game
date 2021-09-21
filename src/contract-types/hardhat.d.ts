@@ -21,6 +21,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IndexMath__factory>;
     getContractFactory(
+      name: "MerkleWrapper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MerkleWrapper__factory>;
+    getContractFactory(
       name: "MerkleHelper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MerkleHelper__factory>;
