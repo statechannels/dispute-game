@@ -25,7 +25,7 @@
     "merkle-tools": "^1.4.1"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --coverage",
     "build": "yarn tsc --noEmit",
     "lint": "eslint \"*/**/*.ts\" --max-warnings=0"
   }
