@@ -18,19 +18,21 @@ export function stepForIndex(
   index: number,
   consensusStep: number,
   disputedStep: number,
-  numbSplits: number
+  numSplits: number
 ): number {
-  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, disputedStep, numbSplits)) {
+  if (index < 0 || index >= expectedNumOfLeaves(consensusStep, disputedStep, numSplits)) {
     throw 'Invalid index';
   }
-  if (index === expectedNumOfLeaves(consensusStep, disputedStep, numbSplits) - 1) {
+  if (index === expectedNumOfLeaves(consensusStep, disputedStep, numSplits) - 1) {
     return disputedStep;
   }
-  const stepDelta =
-    interval(consensusStep, disputedStep, numbSplits) > 1
-      ? interval(consensusStep, disputedStep, numbSplits)
-      : 1;
-  return consensusStep + Math.floor(stepDelta * index);
+
+  // Simulate integer-only math since Solidity does not support floating point math
+  if (Math.floor((disputedStep - consensusStep) / numSplits) === 0) {
+    return consensusStep + index;
+  }
+
+  return consensusStep + Math.floor(((disputedStep - consensusStep) / numSplits) * index);
 }
 
 /**
@@ -40,9 +42,13 @@ export function stepForIndex(
  * @param numSplits
  * @returns A decimal interval.
  */
-export function interval(consensusStep: number, disputedStep: number, numSplits: number): number {
-  const stepsBetweenConsensusAndDisputed = disputedStep - consensusStep;
-  return stepsBetweenConsensusAndDisputed / numSplits;
+
+export function canSplitFurther(
+  consensusStep: number,
+  disputedStep: number,
+  numSplits: number
+): boolean {
+  return disputedStep - consensusStep > numSplits;
 }
 
 /**
@@ -57,7 +63,7 @@ export function expectedNumOfLeaves(
   disputedStep: number,
   numSplits: number
 ): number {
-  return interval(consensusStep, disputedStep, numSplits) >= 1
+  return canSplitFurther(consensusStep, disputedStep, numSplits)
     ? numSplits + 1
     : disputedStep - consensusStep + 1;
 }
@@ -96,8 +102,8 @@ export class ChallengeManager {
     return expectedNumOfLeaves(this.consensusStep, this.disputedStep, this.numSplits);
   }
 
-  public interval(): number {
-    return interval(this.consensusStep, this.disputedStep, this.numSplits);
+  public canSplitFurther(): boolean {
+    return canSplitFurther(this.consensusStep, this.disputedStep, this.numSplits);
   }
 
   public stepForIndex(index: number): number {
@@ -138,7 +144,7 @@ export class ChallengeManager {
     disputedWitness: WitnessProof,
     caller: string
   ): void {
-    if (this.interval() <= 1) {
+    if (!this.canSplitFurther()) {
       throw new Error('States cannot be split further');
     }
 
@@ -178,7 +184,7 @@ export class ChallengeManager {
     consensusState: State,
     disputedWitness: WitnessProof
   ): boolean {
-    if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
+    if (this.canSplitFurther()) throw new Error('Can only detect fraud for sequential states');
 
     this.checkWitnesses(consensusWitness, disputedWitness);
 
