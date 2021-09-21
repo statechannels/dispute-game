@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import {sha3_256} from 'js-sha3';
 
-import {ChallengeManager, State} from '../challenge-manager';
+import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
 import {AutomaticDisputer} from '../auto-disputer';
 import {generateWitness} from '../merkle';
 
@@ -18,6 +18,37 @@ function fingerprints(values: number[], indices: number[]) {
 
 export const fingerprint = (state: State): string => sha3_256(state.root.toString());
 
+/**
+ * Utilities tests
+ */
+describe('stepForIndex tests', () => {
+  () =>
+    test('Index is negative', () => {
+      expect(() => {
+        stepForIndex(-1, 0, 10, 2);
+      }).toThrow('Invalid index');
+    });
+
+  test('Index is too large', () => {
+    expect(() => {
+      stepForIndex(4, 0, 10, 2);
+    }).toThrow('Invalid index');
+  });
+
+  test('Index is too large', () => {
+    expect(stepForIndex(1, 0, 9, 2)).toEqual(4);
+  });
+});
+
+/**
+ * End of utilities tests
+ */
+
+/**
+ * This test case:
+ * - Manually playes the dispute game with the split interval of 2
+ * - Tests invalid inputs
+ */
 test('manual bisection', () => {
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -36,6 +67,7 @@ test('manual bisection', () => {
     proposerId
   );
 
+  // Test invalid inputs
   expect(() =>
     cm.split(
       generateWitness(cm.lastCalldata, 2),
