@@ -3,7 +3,7 @@ pragma solidity 0.8.7;
 import './merkle.sol';
 import './index-math.sol';
 
-abstract contract DisputeGameManager {
+contract DisputeGameManager {
     bytes32 root;
     uint256 numOfSplits;
     uint256 highestStep;
@@ -96,29 +96,4 @@ abstract contract DisputeGameManager {
     function stepForIndex(uint256 index) private view returns (uint256) {
         return IndexMath.stepForIndex(index, lowestStep, highestStep, numOfSplits);
     }
-
-    function detectFraud(
-        WitnessProof calldata consensusWitness,
-        bytes32[] calldata consensusState,
-        WitnessProof calldata disputedWitness
-    ) public view returns (bool) {
-        if (interval() > 1) revert('Can only detect fraud for sequential states');
-
-        checkWitnesses(consensusWitness, disputedWitness);
-
-        if (fingerprint(consensusState) != consensusWitness.witness) {
-            revert('Consensus state does not match the consensusWitness');
-        }
-
-        bytes32[] memory correctWitnessAfter = progress(consensusState);
-        return fingerprint(correctWitnessAfter) != disputedWitness.witness;
-    }
-
-    function fingerprint(bytes32[] memory consensusState) public pure virtual returns (bytes32);
-
-    function progress(bytes32[] memory consensusState)
-        public
-        pure
-        virtual
-        returns (bytes32[] memory);
 }
