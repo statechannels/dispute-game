@@ -104,7 +104,16 @@ export class ChallengeManager {
     return stepForIndex(index, this.consensusStep, this.disputedStep, this.numSplits);
   }
 
-  private checkWitnesses(
+  private validateLeafWitness(witnessProof: WitnessProof, root: string, depth: number): boolean {
+    if (witnessProof.nodes.length !== depth) {
+      throw new Error(
+        `The witness provided is not for a leaf node. Expected ${depth} witness length, recieved ${witnessProof.nodes.length}`
+      );
+    }
+    return validateWitness(witnessProof, root);
+  }
+
+  private checkConsensusAndDisputeWitnesses(
     consensusWitness: WitnessProof,
     disputedWitness: WitnessProof
   ): {consensusIndex: number; disputedIndex: number} {
@@ -115,12 +124,12 @@ export class ChallengeManager {
       throw new Error('Consensus witness cannot be the last stored state');
     }
 
-    const validConsensusWitness = validateWitness(consensusWitness, this.root, this.depth);
+    const validConsensusWitness = this.validateLeafWitness(consensusWitness, this.root, this.depth);
     if (!validConsensusWitness) {
       throw new Error('Invalid consensus witness proof');
     }
 
-    const validDisputeWitness = validateWitness(disputedWitness, this.root, this.depth);
+    const validDisputeWitness = this.validateLeafWitness(disputedWitness, this.root, this.depth);
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
@@ -142,7 +151,10 @@ export class ChallengeManager {
       throw new Error('States cannot be split further');
     }
 
-    const {consensusIndex} = this.checkWitnesses(consensusWitness, disputedWitness);
+    const {consensusIndex} = this.checkConsensusAndDisputeWitnesses(
+      consensusWitness,
+      disputedWitness
+    );
 
     if (hashes[hashes.length - 1] === disputedWitness.witness) {
       throw new Error('The last state supplied must differ from the disputed witness');
@@ -180,7 +192,7 @@ export class ChallengeManager {
   ): boolean {
     if (this.interval() > 1) throw new Error('Can only detect fraud for sequential states');
 
-    this.checkWitnesses(consensusWitness, disputedWitness);
+    this.checkConsensusAndDisputeWitnesses(consensusWitness, disputedWitness);
 
     if (this.fingerprint(consensusState) !== consensusWitness.witness) {
       throw new Error('Consensus state does not match the consensusWitness');

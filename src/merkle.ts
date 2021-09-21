@@ -36,15 +36,9 @@ export function generateWitness(hashes: Hash[], index: number): WitnessProof {
   return {witness, nodes, index};
 }
 
-export function validateWitness(witnessProof: WitnessProof, root: string, depth: number): boolean {
+export function validateWitness(witnessProof: WitnessProof, root: string): boolean {
   const tree = new MerkleTree({hashType: 'SHA3-256'});
   const {index, nodes, witness} = witnessProof;
-
-  if (witnessProof.nodes.length !== depth) {
-    throw new Error(
-      `The witness provided is not for a leaf node. Expected ${depth} witness length, recieved ${witnessProof.nodes.length}`
-    );
-  }
 
   const convertedProof = generateMerkleToolsProof(nodes, index);
   // TODO: The MerkleTools library isn't typed properly so we force a cast here
