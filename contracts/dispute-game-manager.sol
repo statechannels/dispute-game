@@ -10,19 +10,6 @@ abstract contract DisputeGameManager {
     uint256 lowestStep;
     string caller;
 
-    constructor(
-        bytes32[] memory _hashes,
-        uint256 _disputedStep,
-        string memory _caller,
-        uint256 _numOfSplits
-    ) {
-        root = MerkleHelper.generateRoot(_hashes);
-        highestStep = _disputedStep;
-        caller = _caller;
-        numOfSplits = _numOfSplits;
-        lowestStep = 0;
-    }
-
     function expectedNumOfLeaves() private view returns (uint256) {
         return IndexMath.expectedNumOfLeaves(lowestStep, highestStep, numOfSplits);
     }
@@ -112,7 +99,7 @@ abstract contract DisputeGameManager {
 
     function detectFraud(
         WitnessProof calldata consensusWitness,
-        bytes32 consensusState,
+        bytes32[] calldata consensusState,
         WitnessProof calldata disputedWitness
     ) public view returns (bool) {
         if (interval() > 1) revert('Can only detect fraud for sequential states');
@@ -123,11 +110,15 @@ abstract contract DisputeGameManager {
             revert('Consensus state does not match the consensusWitness');
         }
 
-        bytes32 correctWitnessAfter = progress(consensusState);
+        bytes32[] memory correctWitnessAfter = progress(consensusState);
         return fingerprint(correctWitnessAfter) != disputedWitness.witness;
     }
 
-    function fingerprint(bytes32 consensusState) public pure virtual returns (bytes32);
+    function fingerprint(bytes32[] memory consensusState) public pure virtual returns (bytes32);
 
-    function progress(bytes32 consensusState) public pure virtual returns (bytes32);
+    function progress(bytes32[] memory consensusState)
+        public
+        pure
+        virtual
+        returns (bytes32[] memory);
 }
