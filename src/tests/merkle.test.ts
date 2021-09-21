@@ -10,7 +10,7 @@ describe('validateWitness checks', () => {
     const invalidRoot = generateRoot(invalidHashses);
     const witnessProof = generateWitness(validHashes, 2);
 
-    expect(validateWitness(witnessProof, invalidRoot, 2)).toBe(false);
+    expect(validateWitness(witnessProof, invalidRoot)).toBe(false);
   });
 
   test('it returns true for a valid proof and root', () => {
@@ -20,7 +20,7 @@ describe('validateWitness checks', () => {
 
     for (let index = 0; index < validHashes.length; index++) {
       const witnessProof = generateWitness(validHashes, index);
-      expect(validateWitness(witnessProof, validRoot, depth)).toBe(true);
+      expect(validateWitness(witnessProof, validRoot)).toBe(true);
     }
   });
 });

@@ -3,7 +3,7 @@ import {sha3_256} from 'js-sha3';
 
 import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
 import {AutomaticDisputer} from '../auto-disputer';
-import {generateWitness} from '../merkle';
+import {generateWitness, WitnessProof} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
@@ -76,7 +76,7 @@ test('manual bisection', () => {
     2
   );
 
-  // Valid split 1
+  // First valid split
   cm.split(
     generateWitness(cm.lastCalldata, 1),
     fingerprints(incorrectStates, [6, 9]),
@@ -93,6 +93,21 @@ test('manual bisection', () => {
       challengerId
     )
   ).toThrowError('Consensus witness cannot be the last stored state');
+
+  const leafWintness = generateWitness(cm.lastCalldata, 0);
+  const lastNode = leafWintness.nodes.pop() as string;
+  const nonLeafWitness: WitnessProof = {witness: lastNode, nodes: leafWintness.nodes, index: 0};
+
+  expect(() =>
+    cm.split(
+      nonLeafWitness,
+      fingerprints(correctStates, [5, 6]),
+      generateWitness(cm.lastCalldata, 1),
+      challengerId
+    )
+  ).toThrowError(
+    'The witness provided is not for a leaf node. Expected 2 witness length, recieved 1'
+  );
 
   expect(() =>
     cm.split(
@@ -139,7 +154,15 @@ test('manual bisection', () => {
     )
   ).toThrowError('Expected 2 number of states, recieved 3');
 
-  // Valid split 2
+  expect(() => {
+    cm.detectFraud(
+      generateWitness(cm.lastCalldata, 1),
+      {root: 4},
+      generateWitness(cm.lastCalldata, 2)
+    );
+  }).toThrow('Can only detect fraud for sequential states');
+
+  // Second valid split
   cm.split(
     generateWitness(cm.lastCalldata, 0),
     fingerprints(correctStates, [5, 6]),
@@ -163,6 +186,14 @@ test('manual bisection', () => {
       generateWitness(cm.lastCalldata, 2)
     )
   ).toBe(false);
+
+  expect(() => {
+    cm.detectFraud(
+      generateWitness(cm.lastCalldata, 1),
+      {root: 4},
+      generateWitness(cm.lastCalldata, 2)
+    );
+  }).toThrow('Consensus state does not match the consensusWitness');
 });
 
 test('manual tri-section', () => {
