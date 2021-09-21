@@ -30,7 +30,7 @@ export class AutoDisputerAgent {
     const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
     const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
     const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
-    if (this.cm.interval() > 1) {
+    if (this.cm.canSplitFurther()) {
       let leaves = this.splitStates(agreeWithStep, disagreeWithStep);
 
       // We only want the leaves so we slice off the parent
@@ -44,14 +44,13 @@ export class AutoDisputerAgent {
 
       const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
       const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
-      const detectedFraud =
-        this.cm.interval() <= 1
-          ? this.cm.detectFraud(
-              consensusWitness,
-              this.myStates[this.cm.stepForIndex(disagreeWithIndex - 1)],
-              disputedWitness
-            )
-          : false;
+      const detectedFraud = !this.cm.canSplitFurther()
+        ? this.cm.detectFraud(
+            consensusWitness,
+            this.myStates[this.cm.stepForIndex(disagreeWithIndex - 1)],
+            disputedWitness
+          )
+        : false;
       return {complete: true, detectedFraud};
     }
   }
