@@ -10,6 +10,19 @@ contract DisputeGameManager {
     uint256 lowestStep;
     string caller;
 
+    constructor(
+        bytes32[] memory _hashes,
+        uint256 _disputedStep,
+        string memory _caller,
+        uint256 _numOfSplits
+    ) {
+        root = MerkleHelper.generateRoot(_hashes);
+        highestStep = _disputedStep;
+        caller = _caller;
+        numOfSplits = _numOfSplits;
+        lowestStep = 0;
+    }
+
     function expectedNumOfLeaves() private view returns (uint256) {
         return IndexMath.expectedNumOfLeaves(lowestStep, highestStep, numOfSplits);
     }
