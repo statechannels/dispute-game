@@ -61,6 +61,94 @@ test('Invalid ChallengeManager instanatiation', () => {
   }).toThrow('Expected 3 number of states, recieved 4');
 });
 
+test('Invalid splits, invalid detect fraud', () => {
+  const cm = new ChallengeManager(
+    fingerprints(correctStates, [0, 4, 9]),
+    state => ({root: state.root + 1}),
+    fingerprint,
+    challengerId,
+    9,
+    2
+  );
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.lastCalldata, 2),
+      fingerprints(correctStates, [9]),
+      generateWitness(cm.lastCalldata, 2),
+      challengerId
+    )
+  ).toThrowError('Consensus witness cannot be the last stored state');
+
+  const leafWintness = generateWitness(cm.lastCalldata, 0);
+  const lastNode = leafWintness.nodes.pop() as string;
+  const nonLeafWitness: WitnessProof = {witness: lastNode, nodes: leafWintness.nodes, index: 0};
+
+  expect(() =>
+    cm.split(
+      nonLeafWitness,
+      fingerprints(correctStates, [2, 4]),
+      generateWitness(cm.lastCalldata, 1),
+      challengerId
+    )
+  ).toThrowError(
+    'The witness provided is not for a leaf node. Expected 2 witness length, recieved 1'
+  );
+
+  expect(() =>
+    cm.split(
+      generateWitness(fingerprints(correctStates, [5, 6, 7]), 1),
+      fingerprints(correctStates, [2, 4]),
+      generateWitness(cm.lastCalldata, 2),
+      challengerId
+    )
+  ).toThrowError('Invalid consensus witness proof');
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.lastCalldata, 1),
+      fingerprints(correctStates, [2, 4]),
+      generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
+      challengerId
+    )
+  ).toThrowError('Invalid dispute witness proof');
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.lastCalldata, 0),
+      fingerprints(correctStates, [2, 4]),
+      generateWitness(cm.lastCalldata, 2),
+      challengerId
+    )
+  ).toThrowError('Disputed state hash must be the next leaf after consensus state hash');
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.lastCalldata, 1),
+      fingerprints(correctStates, [6, 9]),
+      generateWitness(cm.lastCalldata, 2),
+      challengerId
+    )
+  ).toThrowError('The last state supplied must differ from the disputed witness');
+
+  expect(() =>
+    cm.split(
+      generateWitness(cm.lastCalldata, 0),
+      fingerprints(correctStates, [2, 3, 5]),
+      generateWitness(cm.lastCalldata, 1),
+      challengerId
+    )
+  ).toThrowError('Expected 2 number of states, recieved 3');
+
+  expect(() => {
+    cm.detectFraud(
+      generateWitness(cm.lastCalldata, 0),
+      {root: 4},
+      generateWitness(cm.lastCalldata, 1)
+    );
+  }).toThrow('Can only detect fraud for sequential states');
+});
+
 /**
  * This test case:
  * - Manually playes the dispute game with the split interval of 2
@@ -83,84 +171,6 @@ test('manual bisection', () => {
     generateWitness(cm.lastCalldata, 2),
     proposerId
   );
-
-  // Test invalid inputs
-  expect(() =>
-    cm.split(
-      generateWitness(cm.lastCalldata, 2),
-      fingerprints(correctStates, [9]),
-      generateWitness(cm.lastCalldata, 2),
-      challengerId
-    )
-  ).toThrowError('Consensus witness cannot be the last stored state');
-
-  const leafWintness = generateWitness(cm.lastCalldata, 0);
-  const lastNode = leafWintness.nodes.pop() as string;
-  const nonLeafWitness: WitnessProof = {witness: lastNode, nodes: leafWintness.nodes, index: 0};
-
-  expect(() =>
-    cm.split(
-      nonLeafWitness,
-      fingerprints(correctStates, [5, 6]),
-      generateWitness(cm.lastCalldata, 1),
-      challengerId
-    )
-  ).toThrowError(
-    'The witness provided is not for a leaf node. Expected 2 witness length, recieved 1'
-  );
-
-  expect(() =>
-    cm.split(
-      generateWitness(fingerprints(correctStates, [5, 6, 7]), 1),
-      fingerprints(correctStates, [2, 9]),
-      generateWitness(cm.lastCalldata, 2),
-      challengerId
-    )
-  ).toThrowError('Invalid consensus witness proof');
-
-  expect(() =>
-    cm.split(
-      generateWitness(cm.lastCalldata, 1),
-      fingerprints(correctStates, [5, 6]),
-      generateWitness(fingerprints(correctStates, [0, 1, 2]), 2),
-      challengerId
-    )
-  ).toThrowError('Invalid dispute witness proof');
-
-  expect(() =>
-    cm.split(
-      generateWitness(cm.lastCalldata, 0),
-      fingerprints(correctStates, [5, 6]),
-      generateWitness(cm.lastCalldata, 2),
-      challengerId
-    )
-  ).toThrowError('Disputed state hash must be the next leaf after consensus state hash');
-
-  expect(() =>
-    cm.split(
-      generateWitness(cm.lastCalldata, 0),
-      fingerprints(incorrectStates, [5, 6]),
-      generateWitness(cm.lastCalldata, 1),
-      challengerId
-    )
-  ).toThrowError('The last state supplied must differ from the disputed witness');
-
-  expect(() =>
-    cm.split(
-      generateWitness(cm.lastCalldata, 0),
-      fingerprints(correctStates, [5, 6, 7]),
-      generateWitness(cm.lastCalldata, 1),
-      challengerId
-    )
-  ).toThrowError('Expected 2 number of states, recieved 3');
-
-  expect(() => {
-    cm.detectFraud(
-      generateWitness(cm.lastCalldata, 1),
-      {root: 4},
-      generateWitness(cm.lastCalldata, 2)
-    );
-  }).toThrow('Can only detect fraud for sequential states');
 
   // Second valid split
   cm.split(
