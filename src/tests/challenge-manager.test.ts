@@ -59,6 +59,17 @@ test('Invalid ChallengeManager instanatiation', () => {
       2
     );
   }).toThrow('Expected 3 number of states, recieved 4');
+
+  expect(() => {
+    new ChallengeManager(
+      fingerprints(correctStates, [0, 4, 9]),
+      state => ({root: state.root + 1}),
+      fingerprint,
+      challengerId,
+      9,
+      1
+    );
+  }).toThrow('Expected numSplits of at least 2, received 1');
 });
 
 test('Invalid splits, invalid detect fraud', () => {
