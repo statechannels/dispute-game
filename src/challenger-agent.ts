@@ -2,7 +2,7 @@ import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './chal
 import {fingerprint, Role} from './tests/challenge-manager.test';
 import {generateWitness, Hash} from './merkle';
 
-export class AutoDisputerAgent {
+export class ChallengerAgent {
   constructor(
     public role: Role,
     public cm: ChallengeManager,
@@ -68,8 +68,8 @@ export class AutoDisputerAgent {
 
 export class AutomaticDisputer {
   private cm: ChallengeManager;
-  challenger: AutoDisputerAgent;
-  proposer: AutoDisputerAgent;
+  challenger: ChallengerAgent;
+  proposer: ChallengerAgent;
 
   constructor(
     public numSplits: number,
@@ -91,8 +91,8 @@ export class AutomaticDisputer {
       this.numSplits
     );
 
-    this.proposer = new AutoDisputerAgent('proposer', this.cm, this.proposerStates, this.numSplits);
-    this.challenger = new AutoDisputerAgent(
+    this.proposer = new ChallengerAgent('proposer', this.cm, this.proposerStates, this.numSplits);
+    this.challenger = new ChallengerAgent(
       'challenger',
       this.cm,
       this.challengerStates,
