@@ -8,7 +8,7 @@ module.exports = {
    *  to merkle-tools dependency. So it is ignored for now.
    */
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.{js,ts}', '!src/{index,merkle,auto-disputer}.ts'],
+  collectCoverageFrom: ['src/**/*.{js,ts}', '!src/{index,merkle,challenger-agent}.ts'],
   coverageThreshold: {
     global: {
       branches: 100,
