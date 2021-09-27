@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {sha3_256} from 'js-sha3';
 
 import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
-import {AutomaticDisputer} from '../challenger-agent';
+import {DisputeGame} from '../challenger-agent';
 import {generateWitness, WitnessProof} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
@@ -254,7 +254,7 @@ test('Fuzzy testing', () => {
       ).map(root => ({root}));
 
       try {
-        const ad = new AutomaticDisputer(splitNum, correctStates, incorrectStates);
+        const ad = new DisputeGame(splitNum, correctStates, incorrectStates);
         // TODO: We should check that the states contain the state at errorIndex
         const {detectedFraud} = ad.runDispute();
         if (ad.caller === 'proposer') {
