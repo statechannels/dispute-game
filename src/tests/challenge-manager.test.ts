@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {sha3_256} from 'js-sha3';
 
 import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
-import {AutomaticDisputer} from '../auto-disputer';
+import {AutomaticDisputer} from '../challenger-agent';
 import {generateWitness, WitnessProof} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
