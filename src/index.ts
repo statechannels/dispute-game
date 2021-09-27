@@ -1,2 +1,2 @@
 export {ChallengeManager} from './challenge-manager';
-export {AutoDisputerAgent} from './challenger-agent';
+export {ChallengerAgent as AutoDisputerAgent} from './challenger-agent';
