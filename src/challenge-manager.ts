@@ -84,6 +84,9 @@ export class ChallengeManager {
     public disputedStep: number,
     public numSplits: number
   ) {
+    if (numSplits < 2) {
+      throw new Error(`Expected numSplits of at least 2, received ${numSplits}`);
+    }
     if (stateHashes.length !== numSplits + 1) {
       throw new Error(`Expected ${numSplits + 1} number of states, recieved ${stateHashes.length}`);
     }
