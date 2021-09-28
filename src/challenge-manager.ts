@@ -216,7 +216,7 @@ export class ChallengeManager {
     return fraudDetected;
   }
 
-  forfiet(caller: string): void {
+  forfeit(caller: string): void {
     this.loser = caller;
   }
 }

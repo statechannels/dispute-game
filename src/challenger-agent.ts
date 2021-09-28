@@ -1,18 +1,40 @@
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
 import {fingerprint, Role} from './tests/challenge-manager.test';
 import {generateWitness, WitnessProof} from './merkle';
+import {DisputeGame} from './dispute-game';
 
 /**
  * The ChallengerAgent is a dispute game participant. The agent is initialized with a set of states.
  * The agent uses the states to take turns in the dispute game.
  */
 export class ChallengerAgent {
+  private cm: ChallengeManager;
   constructor(
-    public role: Role,
-    public cm: ChallengeManager,
-    public states: State[],
-    public numSplits: number
-  ) {}
+    private role: Role,
+    private states: State[],
+    numSplits: number,
+    disputeGame: DisputeGame
+  ) {
+    if (!disputeGame.challengeManager) {
+      const initialStates = [];
+      for (let i = 0; i < expectedNumOfLeaves(0, states.length - 1, numSplits); i++) {
+        const index = i === 0 ? 0 : stepForIndex(i, 0, states.length - 1, numSplits);
+        initialStates.push(states[index]);
+      }
+
+      disputeGame.deployChallengeManager(
+        new ChallengeManager(
+          initialStates.map(fingerprint),
+          state => ({root: state.root + 1}),
+          fingerprint,
+          'proposer',
+          this.states.length - 1,
+          numSplits
+        )
+      );
+    }
+    this.cm = disputeGame.getValidChallengeManager();
+  }
 
   private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
     const disagreeWithIndex = this.firstDisputedIndex();
@@ -50,8 +72,12 @@ export class ChallengerAgent {
 
     let leaves: State[] = [];
 
-    for (let i = 0; i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits); i++) {
-      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.numSplits);
+    for (
+      let i = 0;
+      i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.cm.numSplits);
+      i++
+    ) {
+      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.cm.numSplits);
       leaves.push(this.states[index]);
     }
 

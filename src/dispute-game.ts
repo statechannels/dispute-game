@@ -1,55 +1,45 @@
 import {ChallengeManager, ChallengerAgent} from '.';
-import {State, expectedNumOfLeaves, stepForIndex} from './challenge-manager';
+import {State} from './challenge-manager';
 import {Hash} from './merkle';
-import {fingerprint} from './tests/challenge-manager.test';
 
 export class DisputeGame {
-  private cm: ChallengeManager;
-  challenger: ChallengerAgent;
-  proposer: ChallengerAgent;
+  private challenger: ChallengerAgent;
+  private proposer: ChallengerAgent;
+  /**
+   * The ChallengeManager mimics the on-chain contract.
+   * It can be 'deployed' and its state can be inspected.
+   */
+  public challengeManager: ChallengeManager | null = null;
 
-  constructor(
-    public numSplits: number,
-    public challengerStates: State[],
-    public proposerStates: State[]
-  ) {
-    const initialStates = [];
-    for (let i = 0; i < expectedNumOfLeaves(0, proposerStates.length - 1, numSplits); i++) {
-      const index = i === 0 ? 0 : stepForIndex(i, 0, proposerStates.length - 1, numSplits);
-      initialStates.push(proposerStates[index]);
+  constructor(numSplits: number, challengerStates: State[], proposerStates: State[]) {
+    this.proposer = new ChallengerAgent('proposer', proposerStates, numSplits, this);
+    this.challenger = new ChallengerAgent('challenger', challengerStates, numSplits, this);
+  }
+
+  public deployChallengeManager(cm: ChallengeManager): void {
+    this.challengeManager = cm;
+  }
+
+  public getValidChallengeManager(): ChallengeManager {
+    if (!this.challengeManager) {
+      throw new Error('Expected a non-null ChallengeManager');
     }
-
-    this.cm = new ChallengeManager(
-      initialStates.map(fingerprint),
-      state => ({root: state.root + 1}),
-      fingerprint,
-      'proposer',
-      this.challengerStates.length - 1,
-      this.numSplits
-    );
-
-    this.proposer = new ChallengerAgent('proposer', this.cm, this.proposerStates, this.numSplits);
-    this.challenger = new ChallengerAgent(
-      'challenger',
-      this.cm,
-      this.challengerStates,
-      this.numSplits
-    );
+    return this.challengeManager;
   }
 
   private getActor(): ChallengerAgent {
-    if (this.cm.caller === 'challenger') {
+    if (this.getValidChallengeManager().caller === 'challenger') {
       return this.proposer;
     }
     return this.challenger;
   }
 
   public get caller(): string {
-    return this.cm.caller;
+    return this.getValidChallengeManager().caller;
   }
 
   public get loser(): string {
-    return this.cm.loser;
+    return this.getValidChallengeManager().loser;
   }
 
   public runDispute(): {detectedFraud: boolean; states: Hash[]} {
@@ -57,8 +47,8 @@ export class DisputeGame {
     while (true) {
       if (!this.getActor().split()) {
         return {
-          detectedFraud: this.getActor().detectFraudOrForfiet(),
-          states: this.cm.lastCalldata
+          detectedFraud: this.getActor().proveFraudOrForfeit(),
+          states: this.getValidChallengeManager().lastCalldata
         };
       }
     }
