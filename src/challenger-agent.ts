@@ -1,6 +1,6 @@
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
 import {fingerprint, Role} from './tests/challenge-manager.test';
-import {generateWitness, Hash, WitnessProof} from './merkle';
+import {generateWitness, WitnessProof} from './merkle';
 
 /**
  * The ChallengerAgent is a dispute game participant. The agent is initialized with a set of states.
@@ -74,6 +74,9 @@ export class ChallengerAgent {
       this.states[this.cm.stepForIndex(disagreeWithIndex - 1)],
       disputedWitness
     );
+    if (!detectedFraud) {
+      this.cm.forfiet(this.role);
+    }
     return detectedFraud;
   }
 
@@ -85,63 +88,5 @@ export class ChallengerAgent {
       }
     }
     throw 'Did not find disputed state';
-  }
-}
-
-export class DisputeGame {
-  private cm: ChallengeManager;
-  challenger: ChallengerAgent;
-  proposer: ChallengerAgent;
-
-  constructor(
-    public numSplits: number,
-    public challengerStates: State[],
-    public proposerStates: State[]
-  ) {
-    const initialStates = [];
-    for (let i = 0; i < expectedNumOfLeaves(0, proposerStates.length - 1, numSplits); i++) {
-      const index = i === 0 ? 0 : stepForIndex(i, 0, proposerStates.length - 1, numSplits);
-      initialStates.push(proposerStates[index]);
-    }
-
-    this.cm = new ChallengeManager(
-      initialStates.map(fingerprint),
-      state => ({root: state.root + 1}),
-      fingerprint,
-      'proposer',
-      this.challengerStates.length - 1,
-      this.numSplits
-    );
-
-    this.proposer = new ChallengerAgent('proposer', this.cm, this.proposerStates, this.numSplits);
-    this.challenger = new ChallengerAgent(
-      'challenger',
-      this.cm,
-      this.challengerStates,
-      this.numSplits
-    );
-  }
-
-  private getActor(): ChallengerAgent {
-    if (this.cm.caller === 'challenger') {
-      return this.proposer;
-    }
-    return this.challenger;
-  }
-
-  public get caller(): string {
-    return this.cm.caller;
-  }
-
-  public runDispute(): {detectedFraud: boolean; states: Hash[]} {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      if (!this.getActor().split()) {
-        return {
-          detectedFraud: this.getActor().detectFraudOrForfiet(),
-          states: this.cm.lastCalldata
-        };
-      }
-    }
   }
 }

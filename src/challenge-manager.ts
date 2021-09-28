@@ -72,6 +72,7 @@ export function expectedNumOfLeaves(
 export class ChallengeManager {
   public consensusStep = 0;
   public root: Hash;
+  public loser = '';
 
   // This mimics the transaction calldata on Ethereum. This should never be read internally.
   public lastCalldata: Hash[];
@@ -208,6 +209,14 @@ export class ChallengeManager {
     }
 
     const correctWitnessAfter = this.progress(consensusState);
-    return this.fingerprint(correctWitnessAfter) !== disputedWitness.witness;
+    const fraudDetected = this.fingerprint(correctWitnessAfter) !== disputedWitness.witness;
+    if (fraudDetected) {
+      this.loser = this.caller;
+    }
+    return fraudDetected;
+  }
+
+  forfiet(caller: string): void {
+    this.loser = caller;
   }
 }

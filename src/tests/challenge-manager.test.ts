@@ -2,7 +2,7 @@ import _ from 'lodash';
 import {sha3_256} from 'js-sha3';
 
 import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
-import {DisputeGame} from '../challenger-agent';
+import {DisputeGame} from '../dispute-game';
 import {generateWitness, WitnessProof} from '../merkle';
 
 export type Role = 'challenger' | 'proposer';
@@ -254,14 +254,15 @@ test('Fuzzy testing', () => {
       ).map(root => ({root}));
 
       try {
-        const ad = new DisputeGame(splitNum, correctStates, incorrectStates);
+        const dg = new DisputeGame(splitNum, correctStates, incorrectStates);
         // TODO: We should check that the states contain the state at errorIndex
-        const {detectedFraud} = ad.runDispute();
-        if (ad.caller === 'proposer') {
+        const {detectedFraud} = dg.runDispute();
+        if (dg.caller === 'proposer') {
           expect(detectedFraud).toBe(true);
         } else {
           expect(detectedFraud).toBe(false);
         }
+        expect(dg.loser).toEqual('proposer');
       } catch (error) {
         console.error(`Failed with splitNum ${splitNum} and error starting at index ${errorIndex}`);
         throw error;
