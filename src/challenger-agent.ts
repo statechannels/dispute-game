@@ -21,6 +21,16 @@ export class ChallengerAgent {
     return {consensusWitness, disputedWitness};
   }
 
+  private firstDisputedIndex(): number {
+    for (let i = 0; i < this.cm.lastCalldata.length; i++) {
+      const step = this.cm.stepForIndex(i);
+      if (this.cm.lastCalldata[i] !== fingerprint(this.states[step])) {
+        return i;
+      }
+    }
+    throw 'Did not find disputed state';
+  }
+
   /**
    * Take a turn splitting states
    * @returns whether a split was successful
@@ -53,7 +63,11 @@ export class ChallengerAgent {
     return true;
   }
 
-  public detectFraudOrForfiet(): boolean {
+  /**
+   * Attempt to prove fraud. If not able to prove fraud, forfeit the dispute game.
+   * @returns whether fraud was proven.
+   */
+  public proveFraudOrForfeit(): boolean {
     const disagreeWithIndex = this.firstDisputedIndex();
 
     const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
@@ -64,18 +78,8 @@ export class ChallengerAgent {
       disputedWitness
     );
     if (!detectedFraud) {
-      this.cm.forfiet(this.role);
+      this.cm.forfeit(this.role);
     }
     return detectedFraud;
-  }
-
-  private firstDisputedIndex(): number {
-    for (let i = 0; i < this.cm.lastCalldata.length; i++) {
-      const step = this.cm.stepForIndex(i);
-      if (this.cm.lastCalldata[i] !== fingerprint(this.states[step])) {
-        return i;
-      }
-    }
-    throw 'Did not find disputed state';
   }
 }
