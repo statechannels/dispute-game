@@ -14,17 +14,6 @@ export class ChallengerAgent {
     public numSplits: number
   ) {}
 
-  private splitStates(agreeWithStep: number, disagreeWithStep: number): State[] {
-    const initialStates: State[] = [];
-
-    for (let i = 0; i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits); i++) {
-      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.numSplits);
-      initialStates.push(this.states[index]);
-    }
-
-    return initialStates;
-  }
-
   private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
     const disagreeWithIndex = this.firstDisputedIndex();
     const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
