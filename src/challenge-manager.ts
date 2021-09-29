@@ -68,7 +68,26 @@ export function expectedNumOfLeaves(
     : disputedStep - consensusStep + 1;
 }
 
-// When implemented in Solidity, the challenger will deploy the contract
+/**
+ * ChallengeManager prototypes the contract to be deployed on-chain.
+ * - Allows participants to split a range of states until the states provided are sequential.
+ * - Allows a participant to prove fraud after splitting.
+ * - Allows a participant to forfeit at any time.
+ *
+ * Note on indices vs steps:
+ * Let's assume that Alice holds hashes [h0, h1, h2, h3, h4]. This is a list of hashes with 4 steps.
+ * Alice can initialize the challenge manager with hashes [h0, h2, h4]. The challenge manager then stores the root of the merkle tree:
+ *
+ *       root
+ *     |       |
+ *   node0   node1
+ *   |  |    |  |
+ *  h0  h2  h4 null
+ *
+ * - An index of a hash is the position of the hash in the ChallengeManager merkle tree leaf list.
+ * - A step of a hash is the position of the hash in the complete step array.
+ * So indices of [h0, h2, h4] are [0, 1, 2]. The steps of [h0, h2, h4] are [0, 2, 4].
+ */
 export class ChallengeManager {
   public consensusStep = 0;
   public root: Hash;
@@ -77,6 +96,15 @@ export class ChallengeManager {
   // This mimics the transaction calldata on Ethereum. This should never be read internally.
   public lastCalldata: Hash[];
 
+  /**
+   * Sets up the on-chain state for the dispute game.
+   * @param stateHashes Initial hashes supplied to the dispute game.
+   * @param progress Defines a valid transition from a state to the next state.
+   * @param fingerprint Maps a state to the fingerprint/hash of the state.
+   * @param lastMover Tracks the last participant to take a turn. In the future, a valid signature will be required.
+   * @param disputedStep The step of the last stateHash supplied.
+   * @param numSplits A state range is split into numSplits on contract initialization and during split operations.
+   */
   constructor(
     stateHashes: Hash[],
     public progress: (state: State) => State,
@@ -93,25 +121,6 @@ export class ChallengeManager {
     }
     this.lastCalldata = stateHashes;
     this.root = generateRoot(stateHashes);
-  }
-
-  /**
-   * This only works with full, binary trees. For now, we are padding the leaves with leaves of sha256('0').
-   */
-  public get depth(): number {
-    return Math.ceil(Math.log2(this.expectedNumLeaves()));
-  }
-
-  public expectedNumLeaves(): number {
-    return expectedNumOfLeaves(this.consensusStep, this.disputedStep, this.numSplits);
-  }
-
-  public canSplitFurther(): boolean {
-    return canSplitFurther(this.consensusStep, this.disputedStep, this.numSplits);
-  }
-
-  public stepForIndex(index: number): number {
-    return stepForIndex(index, this.consensusStep, this.disputedStep, this.numSplits);
   }
 
   private validateLeafWitness(witnessProof: WitnessProof, root: string, depth: number): boolean {
@@ -134,12 +143,20 @@ export class ChallengeManager {
       throw new Error('Consensus witness cannot be the last stored state');
     }
 
-    const validConsensusWitness = this.validateLeafWitness(consensusWitness, this.root, this.depth);
+    const validConsensusWitness = this.validateLeafWitness(
+      consensusWitness,
+      this.root,
+      this.treeDepth
+    );
     if (!validConsensusWitness) {
       throw new Error('Invalid consensus witness proof');
     }
 
-    const validDisputeWitness = this.validateLeafWitness(disputedWitness, this.root, this.depth);
+    const validDisputeWitness = this.validateLeafWitness(
+      disputedWitness,
+      this.root,
+      this.treeDepth
+    );
     if (!validDisputeWitness) {
       throw new Error('Invalid dispute witness proof');
     }
@@ -151,6 +168,38 @@ export class ChallengeManager {
     return {consensusIndex, disputedIndex};
   }
 
+  /**
+   * This only works with full, binary trees. For now, we are padding the leaves with leaves of sha256('0').
+   */
+  private get treeDepth(): number {
+    return Math.ceil(Math.log2(this.expectedNumLeaves()));
+  }
+
+  private expectedNumLeaves(): number {
+    return expectedNumOfLeaves(this.consensusStep, this.disputedStep, this.numSplits);
+  }
+
+  /**
+   * Public helpers
+   */
+  public canSplitFurther(): boolean {
+    return canSplitFurther(this.consensusStep, this.disputedStep, this.numSplits);
+  }
+
+  public stepForIndex(index: number): number {
+    return stepForIndex(index, this.consensusStep, this.disputedStep, this.numSplits);
+  }
+  /**
+   * END public helpers
+   */
+
+  /**
+   * Enables a dispute game participant to take a turn.
+   * @param consensusWitness Witness to the highest index hash/leaf that the participant agrees with.
+   * @param hashes Hashes between the consensus hash and the disputed hash.
+   * @param disputedWitness Witness to the next leaf after the consensus leaf.
+   * @param mover The player taking the turn.
+   */
   public split(
     consensusWitness: WitnessProof,
     hashes: Hash[],
@@ -195,7 +244,14 @@ export class ChallengeManager {
     this.lastCalldata = stateHashes;
   }
 
-  detectFraud(
+  /**
+   * Given two valid, sequential leaf witnesses, check for fraud and record loser if fraud is found.
+   * @param consensusWitness Witness to the hash prior to the fraudulent transition.
+   * @param consensusState State that hashes to the consensusWitness
+   * @param disputedWitness The next leaf after the consensusWitness
+   * @returns whether fraud is detected.
+   */
+  public detectFraud(
     consensusWitness: WitnessProof,
     consensusState: State,
     disputedWitness: WitnessProof
@@ -216,7 +272,7 @@ export class ChallengeManager {
     return fraudDetected;
   }
 
-  forfeit(mover: string): void {
+  public forfeit(mover: string): void {
     this.loser = mover;
   }
 }
