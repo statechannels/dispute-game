@@ -39,14 +39,14 @@ export class DisputeGame {
   }
 
   private getActor(): ChallengerAgent {
-    if (this.globalContext.getValidChallengeManager().caller === 'challenger') {
+    if (this.globalContext.getValidChallengeManager().lastMover === 'challenger') {
       return this.proposer;
     }
     return this.challenger;
   }
 
-  public get caller(): string {
-    return this.globalContext.getValidChallengeManager().caller;
+  public get lastMover(): string {
+    return this.globalContext.getValidChallengeManager().lastMover;
   }
 
   public get loser(): string {

@@ -257,7 +257,7 @@ test('Fuzzy testing', () => {
         const dg = new DisputeGame(splitNum, correctStates, incorrectStates);
         // TODO: We should check that the states contain the state at errorIndex
         const {detectedFraud} = dg.runDispute();
-        if (dg.caller === 'proposer') {
+        if (dg.lastMover === 'proposer') {
           expect(detectedFraud).toBe(true);
         } else {
           expect(detectedFraud).toBe(false);
