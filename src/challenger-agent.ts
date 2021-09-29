@@ -58,7 +58,7 @@ export class ChallengerAgent {
    * @returns whether a split was successful
    */
   public split(): boolean {
-    if (this.cm.caller === this.role) {
+    if (this.cm.lastMover === this.role) {
       throw new Error('It is not my turn!');
     }
     if (!this.cm.canSplitFurther()) {

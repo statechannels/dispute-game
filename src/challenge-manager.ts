@@ -81,7 +81,7 @@ export class ChallengeManager {
     stateHashes: Hash[],
     public progress: (state: State) => State,
     public fingerprint: (state: State) => Hash,
-    public caller: string,
+    public lastMover: string,
     public disputedStep: number,
     public numSplits: number
   ) {
@@ -155,7 +155,7 @@ export class ChallengeManager {
     consensusWitness: WitnessProof,
     hashes: Hash[],
     disputedWitness: WitnessProof,
-    caller: string
+    mover: string
   ): void {
     if (!this.canSplitFurther()) {
       throw new Error('States cannot be split further');
@@ -178,7 +178,7 @@ export class ChallengeManager {
     if (consensusIndex !== this.numSplits - 1) {
       newDisputedStep = this.stepForIndex(consensusIndex + 1);
     }
-    // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
+    // The leaves are formed by concatenating consensusWitness + leaves supplied by the mover
     const intermediateLeaves =
       expectedNumOfLeaves(newConsensusStep, newDisputedStep, this.numSplits) - 1;
     if (hashes.length !== intermediateLeaves) {
@@ -191,7 +191,7 @@ export class ChallengeManager {
     this.consensusStep = newConsensusStep;
     this.disputedStep = newDisputedStep;
     this.root = generateRoot(stateHashes);
-    this.caller = caller;
+    this.lastMover = mover;
     this.lastCalldata = stateHashes;
   }
 
@@ -211,12 +211,12 @@ export class ChallengeManager {
     const correctWitnessAfter = this.progress(consensusState);
     const fraudDetected = this.fingerprint(correctWitnessAfter) !== disputedWitness.witness;
     if (fraudDetected) {
-      this.loser = this.caller;
+      this.loser = this.lastMover;
     }
     return fraudDetected;
   }
 
-  forfeit(caller: string): void {
-    this.loser = caller;
+  forfeit(mover: string): void {
+    this.loser = mover;
   }
 }
