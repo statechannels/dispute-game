@@ -272,6 +272,10 @@ export class ChallengeManager {
     return fraudDetected;
   }
 
+  /**
+   * The dispute game can be forfeited at any time
+   * @param mover In the future, a valid signature will be required.
+   */
   public forfeit(mover: string): void {
     this.loser = mover;
   }
