@@ -1,7 +1,7 @@
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
 import {fingerprint, Role} from './tests/challenge-manager.test';
 import {generateWitness, WitnessProof} from './merkle';
-import {DisputeGame} from './dispute-game';
+import {GlobalContext} from './dispute-game';
 
 /**
  * The ChallengerAgent is a dispute game participant. The agent is initialized with a set of states.
@@ -13,16 +13,16 @@ export class ChallengerAgent {
     private role: Role,
     private states: State[],
     numSplits: number,
-    disputeGame: DisputeGame
+    globalContext: GlobalContext
   ) {
-    if (!disputeGame.challengeManager) {
+    if (!globalContext.challengeManager) {
       const initialStates = [];
       for (let i = 0; i < expectedNumOfLeaves(0, states.length - 1, numSplits); i++) {
         const index = i === 0 ? 0 : stepForIndex(i, 0, states.length - 1, numSplits);
         initialStates.push(states[index]);
       }
 
-      disputeGame.deployChallengeManager(
+      globalContext.deployChallengeManager(
         new ChallengeManager(
           initialStates.map(fingerprint),
           state => ({root: state.root + 1}),
@@ -33,7 +33,7 @@ export class ChallengerAgent {
         )
       );
     }
-    this.cm = disputeGame.getValidChallengeManager();
+    this.cm = globalContext.getValidChallengeManager();
   }
 
   private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
@@ -58,7 +58,7 @@ export class ChallengerAgent {
    * @returns whether a split was successful
    */
   public split(): boolean {
-    if (this.cm.caller === this.role) {
+    if (this.cm.lastMover === this.role) {
       throw new Error('It is not my turn!');
     }
     if (!this.cm.canSplitFurther()) {
