@@ -5,7 +5,7 @@ import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
 import {DisputeGame} from '../dispute-game';
 import {generateWitness, WitnessProof} from '../merkle';
 
-export type Role = 'challenger' | 'proposer';
+export type Identity = 'challenger' | 'proposer';
 const challengerId = 'challenger' as const;
 const proposerId = 'proposer' as const;
 

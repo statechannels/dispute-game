@@ -1,5 +1,5 @@
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
-import {fingerprint, Role} from './tests/challenge-manager.test';
+import {fingerprint, Identity} from './tests/challenge-manager.test';
 import {generateWitness, WitnessProof} from './merkle';
 import {GlobalContext} from './dispute-game';
 
@@ -9,8 +9,15 @@ import {GlobalContext} from './dispute-game';
  */
 export class ChallengerAgent {
   private cm: ChallengeManager;
+  /**
+   * ChallengerAgent constructor deploys the ChallengerManager if needed
+   * @param identity The identifier of the participant.
+   * @param states  That the participant believes are correct.
+   * @param numSplits After experimentation to find the optimal split number, this will likely be a constant
+   * @param globalContext The blockchain context
+   */
   constructor(
-    private role: Role,
+    private identity: Identity,
     private states: State[],
     numSplits: number,
     globalContext: GlobalContext
@@ -58,7 +65,7 @@ export class ChallengerAgent {
    * @returns whether a split was successful
    */
   public split(): boolean {
-    if (this.cm.lastMover === this.role) {
+    if (this.cm.lastMover === this.identity) {
       throw new Error('It is not my turn!');
     }
     if (!this.cm.canSplitFurther()) {
@@ -84,7 +91,7 @@ export class ChallengerAgent {
     // We only want the leaves so we slice off the parent
     leaves = leaves.slice(1);
 
-    this.cm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.role);
+    this.cm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.identity);
 
     return true;
   }
@@ -104,7 +111,7 @@ export class ChallengerAgent {
       disputedWitness
     );
     if (!detectedFraud) {
-      this.cm.forfeit(this.role);
+      this.cm.forfeit(this.identity);
     }
     return detectedFraud;
   }
