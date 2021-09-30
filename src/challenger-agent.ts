@@ -1,7 +1,9 @@
 import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
-import {fingerprint, Identity} from './tests/challenge-manager.test';
+import {fingerprint} from './tests/challenge-manager.test';
 import {generateWitness, WitnessProof} from './merkle';
 import {GlobalContext} from './dispute-game';
+
+type Identity = 'challenger' | 'proposer';
 
 /**
  * The ChallengerAgent is a dispute game participant. The agent is initialized with a set of states.
