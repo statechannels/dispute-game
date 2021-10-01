@@ -19,7 +19,7 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
-interface DisputeManagerInterface extends ethers.utils.Interface {
+interface ChallengeManagerInterface extends ethers.utils.Interface {
   functions: {
     "checkWitnesses(tuple,tuple)": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
@@ -51,7 +51,7 @@ interface DisputeManagerInterface extends ethers.utils.Interface {
   events: {};
 }
 
-export class DisputeManager extends BaseContract {
+export class ChallengeManager extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -92,7 +92,7 @@ export class DisputeManager extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: DisputeManagerInterface;
+  interface: ChallengeManagerInterface;
 
   functions: {
     checkWitnesses(

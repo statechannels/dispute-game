@@ -13,13 +13,9 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
-      name: "DisputeManager",
+      name: "ChallengeManager",
       signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.DisputeManager__factory>;
-    getContractFactory(
-      name: "DisputeManager",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.DisputeManager__factory>;
+    ): Promise<Contracts.ChallengeManager__factory>;
     getContractFactory(
       name: "MerkleTestWrapper",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -28,14 +24,6 @@ declare module "hardhat/types/runtime" {
       name: "MerkleUtils",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MerkleUtils__factory>;
-    getContractFactory(
-      name: "MerkleWrapper",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MerkleWrapper__factory>;
-    getContractFactory(
-      name: "MerkleHelper",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MerkleHelper__factory>;
 
     // default types
     getContractFactory(

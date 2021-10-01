@@ -8,7 +8,7 @@ enum ChallengeStatus {
     Forfeited
 }
 
-contract DisputeManager {
+contract ChallengeManager {
     bytes32 root;
     uint256 splitFactor;
     uint256 disputedIndex;
