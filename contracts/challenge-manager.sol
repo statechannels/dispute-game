@@ -135,9 +135,10 @@ contract ChallengeManager {
 
     function treeDepth() internal view returns (uint256) {
         uint256 numberOfElements = expectedNumOfLeaves();
+
         uint256 result = log2(numberOfElements);
 
-        if (2**log2(result) == numberOfElements) {
+        if (2**result == numberOfElements) {
             return result;
         } else {
             return result + 1;
