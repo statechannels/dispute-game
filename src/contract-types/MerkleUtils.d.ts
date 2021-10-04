@@ -20,11 +20,16 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface MerkleUtilsInterface extends ethers.utils.Interface {
   functions: {
+    "expectedNumOfLeaves(uint256,uint256,uint256)": FunctionFragment;
     "generateRoot(bytes32[])": FunctionFragment;
     "getLeafIndex(uint256,uint256,uint256,uint256)": FunctionFragment;
     "validateWitness(tuple,bytes32)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "expectedNumOfLeaves",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "generateRoot",
     values: [BytesLike[]]
@@ -41,6 +46,10 @@ interface MerkleUtilsInterface extends ethers.utils.Interface {
     ]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "expectedNumOfLeaves",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "generateRoot",
     data: BytesLike
@@ -101,6 +110,13 @@ export class MerkleUtils extends BaseContract {
   interface: MerkleUtilsInterface;
 
   functions: {
+    expectedNumOfLeaves(
+      loStep: BigNumberish,
+      hiStep: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     generateRoot(
       leaves: BytesLike[],
       overrides?: CallOverrides
@@ -121,6 +137,13 @@ export class MerkleUtils extends BaseContract {
     ): Promise<[boolean]>;
   };
 
+  expectedNumOfLeaves(
+    loStep: BigNumberish,
+    hiStep: BigNumberish,
+    numSplits: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   generateRoot(leaves: BytesLike[], overrides?: CallOverrides): Promise<string>;
 
   getLeafIndex(
@@ -138,6 +161,13 @@ export class MerkleUtils extends BaseContract {
   ): Promise<boolean>;
 
   callStatic: {
+    expectedNumOfLeaves(
+      loStep: BigNumberish,
+      hiStep: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     generateRoot(
       leaves: BytesLike[],
       overrides?: CallOverrides
@@ -161,6 +191,13 @@ export class MerkleUtils extends BaseContract {
   filters: {};
 
   estimateGas: {
+    expectedNumOfLeaves(
+      loStep: BigNumberish,
+      hiStep: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     generateRoot(
       leaves: BytesLike[],
       overrides?: CallOverrides
@@ -182,6 +219,13 @@ export class MerkleUtils extends BaseContract {
   };
 
   populateTransaction: {
+    expectedNumOfLeaves(
+      loStep: BigNumberish,
+      hiStep: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     generateRoot(
       leaves: BytesLike[],
       overrides?: CallOverrides

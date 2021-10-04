@@ -21,8 +21,9 @@ library MerkleUtils {
         uint256 loStep,
         uint256 hiStep,
         uint256 numSplits
-    ) internal pure returns (uint256) {
-        if (interval(loStep, hiStep, numSplits) >= 1) {
+    ) public pure returns (uint256) {
+        bool canSplitFurther = hiStep - loStep > numSplits;
+        if (canSplitFurther) {
             return numSplits + 1;
         } else {
             return hiStep - loStep + 1;
@@ -38,15 +39,12 @@ library MerkleUtils {
         if (index < 0 || index >= expectedNumOfLeaves(consensusStep, disputedStep, numSplits)) {
             revert('Invalid index');
         }
-        if (index == expectedNumOfLeaves(consensusStep, disputedStep, numSplits) - 1) {
-            return disputedStep;
-        }
-        uint256 stepDelta = interval(consensusStep, disputedStep, numSplits);
-        if (stepDelta < 1) {
-            stepDelta = 1;
+
+        if (((disputedStep - consensusStep) / numSplits) == 0) {
+            return consensusStep + index;
         }
 
-        return consensusStep + stepDelta * index;
+        return consensusStep + ((disputedStep - consensusStep) / numSplits) * index;
     }
 
     function generateRoot(bytes32[] memory leaves) external pure returns (bytes32) {
@@ -77,9 +75,9 @@ library MerkleUtils {
 
         for (uint256 i = 0; i < proof.nodes.length; i++) {
             if (index % 2 != 0) {
-                currentHash = keccak256(abi.encodePacked(proof.nodes[i], currentHash));
+                currentHash = keccak256(abi.encode(proof.nodes[i], currentHash));
             } else {
-                currentHash = keccak256(abi.encodePacked(currentHash, proof.nodes[i]));
+                currentHash = keccak256(abi.encode(currentHash, proof.nodes[i]));
             }
             index = index / 2;
         }
@@ -91,16 +89,23 @@ library MerkleUtils {
     }
 
     function padLeaves(bytes32[] memory hashes) private pure returns (bytes32[] memory) {
-        uint256 fullTreeLength = 2**(log2(hashes.length));
+        uint256 result = log2(hashes.length);
+        // If we already have a full tree just return the hashes
+        if (2**result == hashes.length) {
+            return hashes;
+        }
+
+        uint256 fullTreeLength = 2**(result + 1);
+
         bytes32[] memory paddedTree = new bytes32[](fullTreeLength);
 
         uint256 i = 0;
         for (i = 0; i < fullTreeLength; i++) {
-            if (i <= hashes.length) {
+            if (i < hashes.length) {
                 paddedTree[i] = hashes[i];
             } else {
                 // Add a dummy entry
-                paddedTree[i] = keccak256(abi.encodePacked());
+                paddedTree[i] = keccak256(abi.encode(0x0));
             }
         }
 
