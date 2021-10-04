@@ -32,16 +32,19 @@ describe('Merkle Helpers', () => {
   });
 
   it('it returns true for a valid proof and root', async () => {
-    const depth = 6;
-    const validHashes = _.range(Math.pow(2, depth)).map(num => hash(num.toString()));
+    const maxElements = Math.pow(2, 5);
 
-    const validRoot = await merkleTestWrapper.generateRoot(validHashes);
+    for (let numElements = Math.pow(2, 3); numElements <= maxElements; numElements++) {
+      const validHashes = _.range(numElements).map(num => hash(num.toString()));
 
-    for (let index = 0; index < validHashes.length; index++) {
-      const witnessProof = generateWitness(validHashes, 2);
+      const validRoot = await merkleTestWrapper.generateRoot(validHashes);
 
-      const result = await merkleTestWrapper.validateWitness(witnessProof, validRoot);
-      expect(result).to.eq(true);
+      for (let index = 0; index < validHashes.length; index++) {
+        const witnessProof = generateWitness(validHashes, 2);
+
+        const result = await merkleTestWrapper.validateWitness(witnessProof, validRoot);
+        expect(result).to.eq(true);
+      }
     }
   });
 });
