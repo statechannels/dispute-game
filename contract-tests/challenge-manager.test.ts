@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {ChallengeManager} from '..//src/contract-types/ChallengeManager';
-
+import {expect} from 'chai';
 import {generateWitness, hash} from '../src/merkle';
 import _ from 'lodash';
 
@@ -38,5 +38,14 @@ describe('Challenge Manager Contract', () => {
       generateWitness(getElements(incorrectHashes, [4, 6, 9]), 2),
       'challenger'
     );
+
+    await expect(
+      manager.split(
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
+        getElements(incorrectHashes, [6, 9]),
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
+        'proposer'
+      )
+    ).to.be.revertedWith('States cannot be split further');
   });
 });
