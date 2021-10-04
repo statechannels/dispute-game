@@ -9,12 +9,12 @@ struct WitnessProof {
 }
 
 library MerkleUtils {
-    function interval(
-        uint256 loStep,
-        uint256 hiStep,
+    function canSplitFurther(
+        uint256 consensusLeafIndex,
+        uint256 disputedLeafIndex,
         uint256 numSplits
-    ) internal pure returns (uint256) {
-        return (hiStep - loStep) / numSplits;
+    ) public pure returns (bool) {
+        return disputedLeafIndex - consensusLeafIndex > numSplits;
     }
 
     function expectedNumOfLeaves(
@@ -22,8 +22,7 @@ library MerkleUtils {
         uint256 hiStep,
         uint256 numSplits
     ) public pure returns (uint256) {
-        bool canSplitFurther = hiStep - loStep > numSplits;
-        if (canSplitFurther) {
+        if (canSplitFurther(loStep, hiStep, numSplits)) {
             return numSplits + 1;
         } else {
             return hiStep - loStep + 1;

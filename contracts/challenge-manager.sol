@@ -34,10 +34,10 @@ contract ChallengeManager {
         status = ChallengeStatus.InProgress;
     }
 
-    function checkWitnesses(WitnessProof memory consensusProof, WitnessProof memory disputedProof)
-        public
-        view
-    {
+    function checkConsensusAndDisputeWitnesses(
+        WitnessProof memory consensusProof,
+        WitnessProof memory disputedProof
+    ) internal view {
         if (
             consensusProof.index >=
             MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor) - 1
@@ -66,12 +66,12 @@ contract ChallengeManager {
         WitnessProof calldata _disputedProof,
         string calldata _mover
     ) external {
-        if (MerkleUtils.interval(consensusIndex, disputedIndex, splitFactor) < 1) {
+        if (!MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor)) {
             revert('States cannot be split further');
         }
 
         // This verifies that both the consensus value and disputed value are members of the tree
-        this.checkWitnesses(_consensusProof, _disputedProof);
+        checkConsensusAndDisputeWitnesses(_consensusProof, _disputedProof);
 
         if (_hashes[_hashes.length - 1] == _disputedProof.witness) {
             revert('The last state supplied must differ from the disputed witness');

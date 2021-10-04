@@ -21,17 +21,9 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface ChallengeManagerInterface extends ethers.utils.Interface {
   functions: {
-    "checkWitnesses(tuple,tuple)": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "checkWitnesses",
-    values: [
-      { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
-      { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] }
-    ]
-  ): string;
   encodeFunctionData(
     functionFragment: "split",
     values: [
@@ -42,10 +34,6 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     ]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "checkWitnesses",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "split", data: BytesLike): Result;
 
   events: {};
@@ -95,20 +83,6 @@ export class ChallengeManager extends BaseContract {
   interface: ChallengeManagerInterface;
 
   functions: {
-    checkWitnesses(
-      consensusProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      disputedProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -125,20 +99,6 @@ export class ChallengeManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
-
-  checkWitnesses(
-    consensusProof: {
-      witness: BytesLike;
-      index: BigNumberish;
-      nodes: BytesLike[];
-    },
-    disputedProof: {
-      witness: BytesLike;
-      index: BigNumberish;
-      nodes: BytesLike[];
-    },
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   split(
     _consensusProof: {
@@ -157,20 +117,6 @@ export class ChallengeManager extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    checkWitnesses(
-      consensusProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      disputedProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -191,20 +137,6 @@ export class ChallengeManager extends BaseContract {
   filters: {};
 
   estimateGas: {
-    checkWitnesses(
-      consensusProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      disputedProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -223,20 +155,6 @@ export class ChallengeManager extends BaseContract {
   };
 
   populateTransaction: {
-    checkWitnesses(
-      consensusProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      disputedProof: {
-        witness: BytesLike;
-        index: BigNumberish;
-        nodes: BytesLike[];
-      },
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     split(
       _consensusProof: {
         witness: BytesLike;

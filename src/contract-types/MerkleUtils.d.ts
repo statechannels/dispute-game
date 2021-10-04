@@ -20,12 +20,17 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface MerkleUtilsInterface extends ethers.utils.Interface {
   functions: {
+    "canSplitFurther(uint256,uint256,uint256)": FunctionFragment;
     "expectedNumOfLeaves(uint256,uint256,uint256)": FunctionFragment;
     "generateRoot(bytes32[])": FunctionFragment;
     "getLeafIndex(uint256,uint256,uint256,uint256)": FunctionFragment;
     "validateWitness(tuple,bytes32)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "canSplitFurther",
+    values: [BigNumberish, BigNumberish, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "expectedNumOfLeaves",
     values: [BigNumberish, BigNumberish, BigNumberish]
@@ -46,6 +51,10 @@ interface MerkleUtilsInterface extends ethers.utils.Interface {
     ]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "canSplitFurther",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "expectedNumOfLeaves",
     data: BytesLike
@@ -110,6 +119,13 @@ export class MerkleUtils extends BaseContract {
   interface: MerkleUtilsInterface;
 
   functions: {
+    canSplitFurther(
+      consensusLeafIndex: BigNumberish,
+      disputedLeafIndex: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
+
     expectedNumOfLeaves(
       loStep: BigNumberish,
       hiStep: BigNumberish,
@@ -137,6 +153,13 @@ export class MerkleUtils extends BaseContract {
     ): Promise<[boolean]>;
   };
 
+  canSplitFurther(
+    consensusLeafIndex: BigNumberish,
+    disputedLeafIndex: BigNumberish,
+    numSplits: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   expectedNumOfLeaves(
     loStep: BigNumberish,
     hiStep: BigNumberish,
@@ -161,6 +184,13 @@ export class MerkleUtils extends BaseContract {
   ): Promise<boolean>;
 
   callStatic: {
+    canSplitFurther(
+      consensusLeafIndex: BigNumberish,
+      disputedLeafIndex: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
+
     expectedNumOfLeaves(
       loStep: BigNumberish,
       hiStep: BigNumberish,
@@ -191,6 +221,13 @@ export class MerkleUtils extends BaseContract {
   filters: {};
 
   estimateGas: {
+    canSplitFurther(
+      consensusLeafIndex: BigNumberish,
+      disputedLeafIndex: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     expectedNumOfLeaves(
       loStep: BigNumberish,
       hiStep: BigNumberish,
@@ -219,6 +256,13 @@ export class MerkleUtils extends BaseContract {
   };
 
   populateTransaction: {
+    canSplitFurther(
+      consensusLeafIndex: BigNumberish,
+      disputedLeafIndex: BigNumberish,
+      numSplits: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     expectedNumOfLeaves(
       loStep: BigNumberish,
       hiStep: BigNumberish,
