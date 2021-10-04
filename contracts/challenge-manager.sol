@@ -34,64 +34,6 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.InProgress;
     }
 
-    function validateLeafWitness(
-        WitnessProof memory _witnessProof,
-        bytes32 _root,
-        uint256 _depth
-    ) internal pure returns (bool) {
-        require(
-            _witnessProof.nodes.length == _depth,
-            'The witness provided is not for a leaf node.'
-        );
-        return MerkleUtils.validateWitness(_witnessProof, _root);
-    }
-
-    function expectedNumOfLeaves() internal view returns (uint256) {
-        return MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor);
-    }
-
-    function treeDepth() internal view returns (uint256) {
-        uint256 numberOfElements = expectedNumOfLeaves();
-        uint256 result = log2(numberOfElements);
-
-        if (2**log2(result) == numberOfElements) {
-            return result;
-        } else {
-            return result + 1;
-        }
-    }
-
-    function getLeafIndex(uint256 index) internal view returns (uint256) {
-        return MerkleUtils.getLeafIndex(index, consensusIndex, disputedIndex, splitFactor);
-    }
-
-    function canSplitFurther() internal view returns (bool) {
-        return MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor);
-    }
-
-    function checkConsensusAndDisputeWitnesses(
-        WitnessProof memory consensusProof,
-        WitnessProof memory disputedProof
-    ) internal view {
-        if (consensusProof.index >= expectedNumOfLeaves() - 1) {
-            revert('Consensus witness cannot be the last stored state');
-        }
-
-        bool validConsensusWitness = validateLeafWitness(consensusProof, root, treeDepth());
-        if (!validConsensusWitness) {
-            revert('Invalid consensus witness proof');
-        }
-
-        bool validDisputeWitness = validateLeafWitness(disputedProof, root, treeDepth());
-        if (!validDisputeWitness) {
-            revert('Invalid dispute witness proof');
-        }
-
-        if (consensusProof.index + 1 != disputedProof.index) {
-            revert('Disputed state hash must be the next leaf after consensus state hash');
-        }
-    }
-
     function fraudDetected(uint256 index) public {
         uint256 nextLeafIndex = getLeafIndex(index + 1);
 
@@ -150,5 +92,63 @@ contract ChallengeManager {
 
         root = MerkleUtils.generateRoot(newStateHashes);
         lastMover = _mover;
+    }
+
+    function checkConsensusAndDisputeWitnesses(
+        WitnessProof memory consensusProof,
+        WitnessProof memory disputedProof
+    ) internal view {
+        if (consensusProof.index >= expectedNumOfLeaves() - 1) {
+            revert('Consensus witness cannot be the last stored state');
+        }
+
+        bool validConsensusWitness = validateLeafWitness(consensusProof, root, treeDepth());
+        if (!validConsensusWitness) {
+            revert('Invalid consensus witness proof');
+        }
+
+        bool validDisputeWitness = validateLeafWitness(disputedProof, root, treeDepth());
+        if (!validDisputeWitness) {
+            revert('Invalid dispute witness proof');
+        }
+
+        if (consensusProof.index + 1 != disputedProof.index) {
+            revert('Disputed state hash must be the next leaf after consensus state hash');
+        }
+    }
+
+    function validateLeafWitness(
+        WitnessProof memory _witnessProof,
+        bytes32 _root,
+        uint256 _depth
+    ) internal pure returns (bool) {
+        require(
+            _witnessProof.nodes.length == _depth,
+            'The witness provided is not for a leaf node.'
+        );
+        return MerkleUtils.validateWitness(_witnessProof, _root);
+    }
+
+    function expectedNumOfLeaves() internal view returns (uint256) {
+        return MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor);
+    }
+
+    function treeDepth() internal view returns (uint256) {
+        uint256 numberOfElements = expectedNumOfLeaves();
+        uint256 result = log2(numberOfElements);
+
+        if (2**log2(result) == numberOfElements) {
+            return result;
+        } else {
+            return result + 1;
+        }
+    }
+
+    function getLeafIndex(uint256 index) internal view returns (uint256) {
+        return MerkleUtils.getLeafIndex(index, consensusIndex, disputedIndex, splitFactor);
+    }
+
+    function canSplitFurther() internal view returns (bool) {
+        return MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor);
     }
 }
