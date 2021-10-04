@@ -42,7 +42,10 @@ contract ChallengeManager {
         public
         view
     {
-        if (consensusProof.index >= 2 - 1) {
+        if (
+            consensusIndex >=
+            MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor) - 1
+        ) {
             revert('Consensus witness cannot be the last stored state');
         }
 
