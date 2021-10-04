@@ -34,16 +34,12 @@ contract ChallengeManager {
         status = ChallengeStatus.InProgress;
     }
 
-    function expectedNumOfLeaves() private view returns (uint256) {
-        return MerkleUtils.expectedNumOfLeaves(disputedIndex, consensusIndex, splitFactor);
-    }
-
     function checkWitnesses(WitnessProof memory consensusProof, WitnessProof memory disputedProof)
         public
         view
     {
         if (
-            consensusIndex >=
+            consensusProof.index >=
             MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor) - 1
         ) {
             revert('Consensus witness cannot be the last stored state');
