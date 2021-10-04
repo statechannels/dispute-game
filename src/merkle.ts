@@ -13,7 +13,10 @@ export type WitnessProof = {
 function padLeaves(hashes: Hash[]) {
   const paddingLength = Math.pow(2, Math.ceil(Math.log2(hashes.length))) - hashes.length;
 
-  const padding = _.range(paddingLength).map(_i => ethers.utils.keccak256('0x00'));
+  const padding = _.range(paddingLength).map(_i =>
+    ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint256'], [0x0]))
+  );
+
   return [...hashes, ...padding];
 }
 
@@ -87,7 +90,6 @@ export function generateRoot(stateHashes: Hash[]): Hash {
       const parentValue = hashChildren(paddedLeaves[index], paddedLeaves[index + offset]);
 
       paddedLeaves[index] = parentValue;
-      paddedLeaves[index + offset] = parentValue;
     }
   }
 
