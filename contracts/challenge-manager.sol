@@ -53,7 +53,6 @@ contract ChallengeManager {
             revert('States cannot be split further');
         }
 
-        // This verifies that both the consensus value and disputed value are members of the tree
         checkConsensusAndDisputeWitnesses(_consensusProof, _disputedProof);
 
         if (_hashes[_hashes.length - 1] == _disputedProof.witness) {
