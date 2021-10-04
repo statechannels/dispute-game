@@ -14,7 +14,7 @@ contract ChallengeManager {
     uint256 disputedIndex;
     uint256 consensusIndex;
     string lastMover;
-    ChallengeStatus status;
+    ChallengeStatus public currentStatus;
 
     constructor(
         bytes32[] memory _values,
@@ -31,7 +31,7 @@ contract ChallengeManager {
         lastMover = _lastMover;
         splitFactor = _splitFactor;
         consensusIndex = 0;
-        status = ChallengeStatus.InProgress;
+        currentStatus = ChallengeStatus.InProgress;
     }
 
     function checkConsensusAndDisputeWitnesses(
@@ -58,6 +58,25 @@ contract ChallengeManager {
         if (consensusProof.index + 1 != disputedProof.index) {
             revert('Disputed state hash must be the next leaf after consensus state hash');
         }
+    }
+
+    function fraudDetected(uint256 index) public {
+        uint256 nextLeafIndex = MerkleUtils.getLeafIndex(
+            index + 1,
+            consensusIndex,
+            disputedIndex,
+            splitFactor
+        );
+
+        uint256 currentLeafIndex = MerkleUtils.getLeafIndex(
+            index,
+            consensusIndex,
+            disputedIndex,
+            splitFactor
+        );
+
+        require(currentLeafIndex + 1 == nextLeafIndex, 'Must be sibling nodes');
+        currentStatus = ChallengeStatus.FraudDetected;
     }
 
     function split(

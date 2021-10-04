@@ -21,9 +21,19 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface ChallengeManagerInterface extends ethers.utils.Interface {
   functions: {
+    "currentStatus()": FunctionFragment;
+    "fraudDetected(uint256)": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "currentStatus",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "fraudDetected",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "split",
     values: [
@@ -34,6 +44,14 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     ]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "currentStatus",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "fraudDetected",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "split", data: BytesLike): Result;
 
   events: {};
@@ -83,6 +101,13 @@ export class ChallengeManager extends BaseContract {
   interface: ChallengeManagerInterface;
 
   functions: {
+    currentStatus(overrides?: CallOverrides): Promise<[number]>;
+
+    fraudDetected(
+      index: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -99,6 +124,13 @@ export class ChallengeManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
+
+  currentStatus(overrides?: CallOverrides): Promise<number>;
+
+  fraudDetected(
+    index: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
 
   split(
     _consensusProof: {
@@ -117,6 +149,13 @@ export class ChallengeManager extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    currentStatus(overrides?: CallOverrides): Promise<number>;
+
+    fraudDetected(
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -137,6 +176,13 @@ export class ChallengeManager extends BaseContract {
   filters: {};
 
   estimateGas: {
+    currentStatus(overrides?: CallOverrides): Promise<BigNumber>;
+
+    fraudDetected(
+      index: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -155,6 +201,13 @@ export class ChallengeManager extends BaseContract {
   };
 
   populateTransaction: {
+    currentStatus(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    fraudDetected(
+      index: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     split(
       _consensusProof: {
         witness: BytesLike;

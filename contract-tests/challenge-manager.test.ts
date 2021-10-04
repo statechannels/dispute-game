@@ -8,6 +8,12 @@ function getElements(array: string[], indices: number[]): string[] {
   return indices.map(i => array[i]);
 }
 
+enum ChallengeStatus {
+  InProgress = 0,
+  FraudDetected = 1,
+  Forfeited = 2
+}
+
 describe('Challenge Manager Contract', () => {
   let manager: ChallengeManager;
 
@@ -24,7 +30,8 @@ describe('Challenge Manager Contract', () => {
     const incorrectHashes = incorrectStates.map(num => hash(num.toString()));
 
     manager = await factory.deploy(getElements(correctHashes, [0, 4, 9]), 9, 'challenger', 2);
-
+    let status = await manager.currentStatus();
+    expect(status).to.eq(ChallengeStatus.InProgress);
     await manager.split(
       generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
       getElements(incorrectHashes, [6, 9]),
@@ -47,5 +54,9 @@ describe('Challenge Manager Contract', () => {
         'proposer'
       )
     ).to.be.revertedWith('States cannot be split further');
+
+    await manager.fraudDetected(1);
+    status = await manager.currentStatus();
+    expect(status).to.eq(ChallengeStatus.FraudDetected);
   });
 });
