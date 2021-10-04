@@ -46,7 +46,12 @@ contract ChallengeManager {
         return MerkleUtils.validateWitness(_witnessProof, _root);
     }
 
-    function calculateTreeDepth(uint256 numberOfElements) internal pure returns (uint256) {
+    function expectedNumOfLeaves() internal view returns (uint256) {
+        return MerkleUtils.expectedNumOfLeaves(consensusIndex, disputedIndex, splitFactor);
+    }
+
+    function treeDepth() internal view returns (uint256) {
+        uint256 numberOfElements = expectedNumOfLeaves();
         uint256 result = log2(numberOfElements);
 
         if (2**log2(result) == numberOfElements) {
@@ -56,27 +61,28 @@ contract ChallengeManager {
         }
     }
 
+    function getLeafIndex(uint256 index) internal view returns (uint256) {
+        return MerkleUtils.getLeafIndex(index, consensusIndex, disputedIndex, splitFactor);
+    }
+
+    function canSplitFurther() internal view returns (bool) {
+        return MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor);
+    }
+
     function checkConsensusAndDisputeWitnesses(
         WitnessProof memory consensusProof,
         WitnessProof memory disputedProof
     ) internal view {
-        uint256 expectedAmountOfLeaves = MerkleUtils.expectedNumOfLeaves(
-            consensusIndex,
-            disputedIndex,
-            splitFactor
-        );
-
-        if (consensusProof.index >= expectedAmountOfLeaves - 1) {
+        if (consensusProof.index >= expectedNumOfLeaves() - 1) {
             revert('Consensus witness cannot be the last stored state');
         }
 
-        uint256 treeDepth = calculateTreeDepth(expectedAmountOfLeaves);
-        bool validConsensusWitness = validateLeafWitness(consensusProof, root, treeDepth);
+        bool validConsensusWitness = validateLeafWitness(consensusProof, root, treeDepth());
         if (!validConsensusWitness) {
             revert('Invalid consensus witness proof');
         }
 
-        bool validDisputeWitness = validateLeafWitness(disputedProof, root, treeDepth);
+        bool validDisputeWitness = validateLeafWitness(disputedProof, root, treeDepth());
         if (!validDisputeWitness) {
             revert('Invalid dispute witness proof');
         }
@@ -87,19 +93,9 @@ contract ChallengeManager {
     }
 
     function fraudDetected(uint256 index) public {
-        uint256 nextLeafIndex = MerkleUtils.getLeafIndex(
-            index + 1,
-            consensusIndex,
-            disputedIndex,
-            splitFactor
-        );
+        uint256 nextLeafIndex = getLeafIndex(index + 1);
 
-        uint256 currentLeafIndex = MerkleUtils.getLeafIndex(
-            index,
-            consensusIndex,
-            disputedIndex,
-            splitFactor
-        );
+        uint256 currentLeafIndex = getLeafIndex(index);
 
         require(currentLeafIndex + 1 == nextLeafIndex, 'Must be sibling nodes');
         currentStatus = ChallengeStatus.FraudDetected;
@@ -111,7 +107,7 @@ contract ChallengeManager {
         WitnessProof calldata _disputedProof,
         string calldata _mover
     ) external {
-        if (!MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor)) {
+        if (!canSplitFurther()) {
             revert('States cannot be split further');
         }
 
@@ -122,29 +118,14 @@ contract ChallengeManager {
             revert('The last state supplied must differ from the disputed witness');
         }
 
-        uint256 newConsensusLeafIndex = MerkleUtils.getLeafIndex(
-            _consensusProof.index,
-            consensusIndex,
-            disputedIndex,
-            splitFactor
-        );
+        uint256 newConsensusLeafIndex = getLeafIndex(_consensusProof.index);
 
         // The else case is when the consensus state is the second to last state in the state list.
         // In that case, the disputed step not need to be updated.
-        uint256 newDisputedLeafIndex = MerkleUtils.getLeafIndex(
-            _disputedProof.index,
-            consensusIndex,
-            disputedIndex,
-            splitFactor
-        );
+        uint256 newDisputedLeafIndex = getLeafIndex(_disputedProof.index);
 
         if (_consensusProof.index != splitFactor - 1) {
-            newDisputedLeafIndex = MerkleUtils.getLeafIndex(
-                _consensusProof.index + 1,
-                consensusIndex,
-                disputedIndex,
-                splitFactor
-            );
+            newDisputedLeafIndex = getLeafIndex(_consensusProof.index + 1);
         }
         // The leaves are formed by concatenating consensusWitness + leaves supplied by the caller
         uint256 intermediateLeaves = MerkleUtils.expectedNumOfLeaves(
