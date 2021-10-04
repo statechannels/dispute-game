@@ -64,7 +64,7 @@ describe('Challenge Manager Contract', () => {
       )
     ).to.be.revertedWith('States cannot be split further');
 
-    await manager.fraudDetected(1);
+    await manager.fraudDetected(1, 'proposer');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
   });
@@ -85,7 +85,7 @@ describe('Challenge Manager Contract', () => {
       'proposer'
     );
 
-    await manager.fraudDetected(1);
+    await manager.fraudDetected(1, 'challenger');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
   });
@@ -113,9 +113,18 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
         getElements(correctHashes, [9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('Consensus witness cannot be the last stored state');
+
+    await expect(
+      manager.split(
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
+        getElements(correctHashes, [9]),
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
+        'challenger'
+      )
+    ).to.revertedWith('The mover cannot be the same as the last mover');
 
     const leafWintness = generateWitness(getElements(correctHashes, [0, 4, 9]), 0);
     const lastNode = leafWintness.nodes.pop() as string;
@@ -126,7 +135,7 @@ describe('Challenge Manager Contract', () => {
         nonLeafWitness,
         getElements(correctHashes, [9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('The witness provided is not for a leaf node');
 
@@ -135,7 +144,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [5, 6, 7]), 1),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('Invalid consensus witness proof');
 
@@ -144,7 +153,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [5, 6, 7]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('Invalid dispute witness proof');
 
@@ -153,7 +162,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 0),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('Disputed state hash must be the next leaf after consensus state hash');
 
@@ -162,7 +171,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(correctHashes, [6, 9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('The last state supplied must differ from the disputed witness');
 
@@ -171,8 +180,12 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 0),
         getElements(correctHashes, [2, 3, 5]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
-        'responder'
+        'proposer'
       )
     ).to.revertedWith('Incorrect amount of state hashes');
+
+    await expect(manager.fraudDetected(1, 'challenger')).to.revertedWith(
+      'The mover cannot be the same as the last mover'
+    );
   });
 });

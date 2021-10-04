@@ -22,7 +22,7 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface ChallengeManagerInterface extends ethers.utils.Interface {
   functions: {
     "currentStatus()": FunctionFragment;
-    "fraudDetected(uint256)": FunctionFragment;
+    "fraudDetected(uint256,string)": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
 
@@ -32,7 +32,7 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "fraudDetected",
-    values: [BigNumberish]
+    values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "split",
@@ -105,6 +105,7 @@ export class ChallengeManager extends BaseContract {
 
     fraudDetected(
       index: BigNumberish,
+      _mover: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -129,6 +130,7 @@ export class ChallengeManager extends BaseContract {
 
   fraudDetected(
     index: BigNumberish,
+    _mover: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -153,6 +155,7 @@ export class ChallengeManager extends BaseContract {
 
     fraudDetected(
       index: BigNumberish,
+      _mover: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -180,6 +183,7 @@ export class ChallengeManager extends BaseContract {
 
     fraudDetected(
       index: BigNumberish,
+      _mover: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -205,6 +209,7 @@ export class ChallengeManager extends BaseContract {
 
     fraudDetected(
       index: BigNumberish,
+      _mover: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 

@@ -120,8 +120,8 @@ export class MerkleUtils extends BaseContract {
 
   functions: {
     canSplitFurther(
-      consensusLeafIndex: BigNumberish,
-      disputedLeafIndex: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[boolean]>;
@@ -140,8 +140,8 @@ export class MerkleUtils extends BaseContract {
 
     getLeafIndex(
       index: BigNumberish,
-      consensusStep: BigNumberish,
-      disputedStep: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
@@ -154,8 +154,8 @@ export class MerkleUtils extends BaseContract {
   };
 
   canSplitFurther(
-    consensusLeafIndex: BigNumberish,
-    disputedLeafIndex: BigNumberish,
+    consensusIndex: BigNumberish,
+    disputedIndex: BigNumberish,
     numSplits: BigNumberish,
     overrides?: CallOverrides
   ): Promise<boolean>;
@@ -171,8 +171,8 @@ export class MerkleUtils extends BaseContract {
 
   getLeafIndex(
     index: BigNumberish,
-    consensusStep: BigNumberish,
-    disputedStep: BigNumberish,
+    consensusIndex: BigNumberish,
+    disputedIndex: BigNumberish,
     numSplits: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
@@ -185,8 +185,8 @@ export class MerkleUtils extends BaseContract {
 
   callStatic: {
     canSplitFurther(
-      consensusLeafIndex: BigNumberish,
-      disputedLeafIndex: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<boolean>;
@@ -205,8 +205,8 @@ export class MerkleUtils extends BaseContract {
 
     getLeafIndex(
       index: BigNumberish,
-      consensusStep: BigNumberish,
-      disputedStep: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -222,8 +222,8 @@ export class MerkleUtils extends BaseContract {
 
   estimateGas: {
     canSplitFurther(
-      consensusLeafIndex: BigNumberish,
-      disputedLeafIndex: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -242,8 +242,8 @@ export class MerkleUtils extends BaseContract {
 
     getLeafIndex(
       index: BigNumberish,
-      consensusStep: BigNumberish,
-      disputedStep: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -257,8 +257,8 @@ export class MerkleUtils extends BaseContract {
 
   populateTransaction: {
     canSplitFurther(
-      consensusLeafIndex: BigNumberish,
-      disputedLeafIndex: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
@@ -277,8 +277,8 @@ export class MerkleUtils extends BaseContract {
 
     getLeafIndex(
       index: BigNumberish,
-      consensusStep: BigNumberish,
-      disputedStep: BigNumberish,
+      consensusIndex: BigNumberish,
+      disputedIndex: BigNumberish,
       numSplits: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

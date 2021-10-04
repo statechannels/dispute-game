@@ -34,7 +34,10 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.InProgress;
     }
 
-    function fraudDetected(uint256 index) public {
+    function fraudDetected(uint256 index, string calldata _mover) public {
+        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+            revert('The mover cannot be the same as the last mover');
+        }
         uint256 nextLeafIndex = getLeafIndex(index + 1);
 
         uint256 currentLeafIndex = getLeafIndex(index);
@@ -49,6 +52,9 @@ contract ChallengeManager {
         WitnessProof calldata _disputedProof,
         string calldata _mover
     ) external {
+        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+            revert('The mover cannot be the same as the last mover');
+        }
         if (!canSplitFurther()) {
             revert('States cannot be split further');
         }
