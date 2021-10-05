@@ -13,7 +13,7 @@ enum Mover {
     Proposer
 }
 
-contract ChallengeManager {
+contract DisputeManager {
     bytes32 root;
     uint256 immutable splitFactor;
     uint256 disputedIndex;
@@ -41,14 +41,14 @@ contract ChallengeManager {
     }
 
     function forfeit(Mover _mover) external {
-        if (_mover== lastMover) {
+        if (_mover == lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         currentStatus = ChallengeStatus.Forfeited;
     }
 
     function claimFraud(uint256 index, Mover _mover) external {
-        if (_mover== lastMover) {
+        if (_mover == lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         uint256 nextLeafIndex = getLeafIndex(index + 1);
@@ -66,7 +66,7 @@ contract ChallengeManager {
         WitnessProof calldata _disputedProof,
         Mover _mover
     ) external {
-        if (_mover== lastMover) {
+        if (_mover == lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         if (!canSplitFurther()) {
