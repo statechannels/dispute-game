@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {MerkleUtils} from '..//src/contract-types/MerkleUtils';
+import {MerkleUtils} from '../src/contract-types/MerkleUtils';
 
 import {expect} from 'chai';
 import {generateWitness, hash, WitnessProof} from '../src/merkle';
@@ -16,9 +16,9 @@ enum ChallengeStatus {
   Forfeited = 2
 }
 
-describe('Challenge Manager Contract', () => {
+describe('Dispute Manager Contract', () => {
   let merkleUtils: MerkleUtils;
-  let challengeManagerFactory: ContractFactory;
+  let disputeManagerFactory: ContractFactory;
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const correctHashes = correctStates.map(num => hash(num.toString()));
   const incorrectStates = [0, 1, 2, 3, 4, 5.1, 6.1, 7.1, 8.1, 9.1];
@@ -27,13 +27,13 @@ describe('Challenge Manager Contract', () => {
   beforeEach(async () => {
     merkleUtils = await (await ethers.getContractFactory('MerkleUtils')).deploy();
 
-    challengeManagerFactory = await ethers.getContractFactory('ChallengeManager', {
+    disputeManagerFactory = await ethers.getContractFactory('DisputeManager', {
       libraries: {MerkleUtils: merkleUtils.address}
     });
   });
 
   it('can perform a basic bisection', async () => {
-    const manager = await challengeManagerFactory.deploy(
+    const manager = await disputeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
       'challenger',
@@ -73,7 +73,7 @@ describe('Challenge Manager Contract', () => {
   });
 
   it('can perform a basic trisection', async () => {
-    const manager = await challengeManagerFactory.deploy(
+    const manager = await disputeManagerFactory.deploy(
       getElements(correctHashes, [0, 3, 6, 9]),
       9,
       'challenger',
@@ -96,18 +96,18 @@ describe('Challenge Manager Contract', () => {
     expect(fraudIndex).to.eq(1);
   });
 
-  it('Invalid ChallengeManager instanatiation', async () => {
+  it('Invalid DisputeManager instanatiation', async () => {
     expect(
-      challengeManagerFactory.deploy(getElements(correctHashes, [0, 3, 4, 9]), 9, 'challenger', 2)
+      disputeManagerFactory.deploy(getElements(correctHashes, [0, 3, 4, 9]), 9, 'challenger', 2)
     ).to.revertedWith('There must be k+1 values');
 
     expect(
-      challengeManagerFactory.deploy(getElements(correctHashes, [0, 5, 9]), 9, 'challenger', 1)
+      disputeManagerFactory.deploy(getElements(correctHashes, [0, 5, 9]), 9, 'challenger', 1)
     ).to.revertedWith('The splitting factor must be above 1');
   });
 
   it('Invalid splits, invalid detect fraud', async () => {
-    const manager = await challengeManagerFactory.deploy(
+    const manager = await disputeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
       'challenger',
@@ -195,7 +195,7 @@ describe('Challenge Manager Contract', () => {
     );
   });
   it('forfeits', async () => {
-    const manager = await challengeManagerFactory.deploy(
+    const manager = await disputeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
       'challenger',
