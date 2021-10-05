@@ -13,10 +13,6 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
-      name: "ChallengeManager",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.ChallengeManager__factory>;
-    getContractFactory(
       name: "DisputeManager",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.DisputeManager__factory>;
