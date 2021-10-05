@@ -10,7 +10,7 @@ const {expect} = chai;
 let merkleUtils: MerkleUtils;
 let merkleTestWrapper: MerkleTestWrapper;
 
-describe('Merkle Helpers', () => {
+describe('Merkle Utils Contract', () => {
   beforeEach(async () => {
     merkleUtils = await (await ethers.getContractFactory('MerkleUtils')).deploy();
     merkleTestWrapper = await (
