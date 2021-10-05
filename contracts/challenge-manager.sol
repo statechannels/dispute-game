@@ -34,6 +34,13 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.InProgress;
     }
 
+    function forfeit(string calldata _mover) public {
+        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+            revert('The mover cannot be the same as the last mover');
+        }
+        currentStatus = ChallengeStatus.Forfeited;
+    }
+
     function fraudDetected(uint256 index, string calldata _mover) public {
         if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
             revert('The mover cannot be the same as the last mover');
@@ -59,6 +66,9 @@ contract ChallengeManager {
             revert('States cannot be split further');
         }
 
+        if (currentStatus != ChallengeStatus.InProgress) {
+            revert('The challenge is already complete');
+        }
         checkConsensusAndDisputeWitnesses(_consensusProof, _disputedProof);
 
         if (_hashes[_hashes.length - 1] == _disputedProof.witness) {

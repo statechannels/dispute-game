@@ -22,6 +22,7 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 interface ChallengeManagerInterface extends ethers.utils.Interface {
   functions: {
     "currentStatus()": FunctionFragment;
+    "forfeit(string)": FunctionFragment;
     "fraudDetected(uint256,string)": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
@@ -30,6 +31,7 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     functionFragment: "currentStatus",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "forfeit", values: [string]): string;
   encodeFunctionData(
     functionFragment: "fraudDetected",
     values: [BigNumberish, string]
@@ -48,6 +50,7 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     functionFragment: "currentStatus",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "forfeit", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "fraudDetected",
     data: BytesLike
@@ -103,6 +106,11 @@ export class ChallengeManager extends BaseContract {
   functions: {
     currentStatus(overrides?: CallOverrides): Promise<[number]>;
 
+    forfeit(
+      _mover: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     fraudDetected(
       index: BigNumberish,
       _mover: string,
@@ -128,6 +136,11 @@ export class ChallengeManager extends BaseContract {
 
   currentStatus(overrides?: CallOverrides): Promise<number>;
 
+  forfeit(
+    _mover: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   fraudDetected(
     index: BigNumberish,
     _mover: string,
@@ -152,6 +165,8 @@ export class ChallengeManager extends BaseContract {
 
   callStatic: {
     currentStatus(overrides?: CallOverrides): Promise<number>;
+
+    forfeit(_mover: string, overrides?: CallOverrides): Promise<void>;
 
     fraudDetected(
       index: BigNumberish,
@@ -181,6 +196,11 @@ export class ChallengeManager extends BaseContract {
   estimateGas: {
     currentStatus(overrides?: CallOverrides): Promise<BigNumber>;
 
+    forfeit(
+      _mover: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     fraudDetected(
       index: BigNumberish,
       _mover: string,
@@ -206,6 +226,11 @@ export class ChallengeManager extends BaseContract {
 
   populateTransaction: {
     currentStatus(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    forfeit(
+      _mover: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
 
     fraudDetected(
       index: BigNumberish,

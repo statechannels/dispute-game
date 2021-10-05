@@ -188,4 +188,26 @@ describe('Challenge Manager Contract', () => {
       'The mover cannot be the same as the last mover'
     );
   });
+  it('forfeits', async () => {
+    const manager = await challengeManagerFactory.deploy(
+      getElements(correctHashes, [0, 4, 9]),
+      9,
+      'challenger',
+      2
+    );
+    let status = await manager.currentStatus();
+    expect(status).to.eq(ChallengeStatus.InProgress);
+
+    await manager.forfeit('proposer');
+    status = await manager.currentStatus();
+    expect(status).to.eq(ChallengeStatus.Forfeited);
+    expect(
+      manager.split(
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
+        getElements(incorrectHashes, [6, 9]),
+        generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
+        'proposer'
+      )
+    ).to.revertedWith('The challenge is already complete');
+  });
 });
