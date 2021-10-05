@@ -42,7 +42,7 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.Forfeited;
     }
 
-    function fraudDetected(uint256 index, string calldata _mover) public {
+    function claimFraud(uint256 index, string calldata _mover) public {
         if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
             revert('The mover cannot be the same as the last mover');
         }

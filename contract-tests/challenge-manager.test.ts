@@ -64,7 +64,7 @@ describe('Challenge Manager Contract', () => {
       )
     ).to.be.revertedWith('States cannot be split further');
 
-    await manager.fraudDetected(1, 'proposer');
+    await manager.claimFraud(1, 'proposer');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
 
@@ -88,7 +88,7 @@ describe('Challenge Manager Contract', () => {
       'proposer'
     );
 
-    await manager.fraudDetected(1, 'challenger');
+    await manager.claimFraud(1, 'challenger');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
 
@@ -190,7 +190,7 @@ describe('Challenge Manager Contract', () => {
       )
     ).to.revertedWith('Incorrect amount of state hashes');
 
-    await expect(manager.fraudDetected(1, 'challenger')).to.revertedWith(
+    await expect(manager.claimFraud(1, 'challenger')).to.revertedWith(
       'The mover cannot be the same as the last mover'
     );
   });
