@@ -1,5 +1,5 @@
-import {ChallengeManager, ChallengerAgent} from '.';
-import {State} from './challenge-manager';
+import {DisputeManager, ChallengerAgent} from '.';
+import {State} from './dispute-manager';
 import {Hash} from './merkle';
 
 /**
@@ -7,19 +7,19 @@ import {Hash} from './merkle';
  */
 export class GlobalContext {
   /**
-   * The ChallengeManager mimics the on-chain contract.
+   * The DisputeManager mimics the on-chain contract.
    * It can be 'deployed' and its state can be inspected.
    */
-  public challengeManager: ChallengeManager | null = null;
-  public deployChallengeManager(cm: ChallengeManager): void {
-    this.challengeManager = cm;
+  public disputeManager: DisputeManager | null = null;
+  public deployDisputeManager(cm: DisputeManager): void {
+    this.disputeManager = cm;
   }
 
-  public getValidChallengeManager(): ChallengeManager {
-    if (!this.challengeManager) {
-      throw new Error('Expected a non-null ChallengeManager');
+  public getValidDisputeManager(): DisputeManager {
+    if (!this.disputeManager) {
+      throw new Error('Expected a non-null DisputeManager');
     }
-    return this.challengeManager;
+    return this.disputeManager;
   }
 }
 
@@ -39,18 +39,18 @@ export class DisputeGame {
   }
 
   private getActor(): ChallengerAgent {
-    if (this.globalContext.getValidChallengeManager().lastMover === 'challenger') {
+    if (this.globalContext.getValidDisputeManager().lastMover === 'challenger') {
       return this.proposer;
     }
     return this.challenger;
   }
 
   public get lastMover(): string {
-    return this.globalContext.getValidChallengeManager().lastMover;
+    return this.globalContext.getValidDisputeManager().lastMover;
   }
 
   public get loser(): string {
-    return this.globalContext.getValidChallengeManager().loser;
+    return this.globalContext.getValidDisputeManager().loser;
   }
 
   public runDispute(): {detectedFraud: boolean; states: Hash[]} {
@@ -59,7 +59,7 @@ export class DisputeGame {
       if (!this.getActor().split()) {
         return {
           detectedFraud: this.getActor().proveFraudOrForfeit(),
-          states: this.globalContext.getValidChallengeManager().lastCalldata
+          states: this.globalContext.getValidDisputeManager().lastCalldata
         };
       }
     }

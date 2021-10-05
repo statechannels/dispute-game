@@ -1,5 +1,5 @@
-import {ChallengeManager, expectedNumOfLeaves, State, stepForIndex} from './challenge-manager';
-import {fingerprint} from './tests/challenge-manager.test';
+import {DisputeManager, expectedNumOfLeaves, State, stepForIndex} from './dispute-manager';
+import {fingerprint} from './tests/dispute-manager.test';
 import {generateWitness, WitnessProof} from './merkle';
 import {GlobalContext} from './dispute-game';
 
@@ -10,7 +10,7 @@ type Identity = 'challenger' | 'proposer';
  * The agent uses the states to take turns in the dispute game.
  */
 export class ChallengerAgent {
-  private cm: ChallengeManager;
+  private cm: DisputeManager;
   /**
    * ChallengerAgent constructor deploys the ChallengerManager if needed
    * @param identity The identifier of the participant.
@@ -24,15 +24,15 @@ export class ChallengerAgent {
     numSplits: number,
     globalContext: GlobalContext
   ) {
-    if (!globalContext.challengeManager) {
+    if (!globalContext.disputeManager) {
       const initialStates = [];
       for (let i = 0; i < expectedNumOfLeaves(0, states.length - 1, numSplits); i++) {
         const index = i === 0 ? 0 : stepForIndex(i, 0, states.length - 1, numSplits);
         initialStates.push(states[index]);
       }
 
-      globalContext.deployChallengeManager(
-        new ChallengeManager(
+      globalContext.deployDisputeManager(
+        new DisputeManager(
           initialStates.map(fingerprint),
           state => ({root: state.root + 1}),
           fingerprint,
@@ -42,7 +42,7 @@ export class ChallengerAgent {
         )
       );
     }
-    this.cm = globalContext.getValidChallengeManager();
+    this.cm = globalContext.getValidDisputeManager();
   }
 
   private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
