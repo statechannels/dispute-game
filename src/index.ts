@@ -1,2 +1,2 @@
-export {ChallengeManager} from './challenge-manager';
-export {ChallengerAgent} from './challenger-agent';
+export {DisputeManager} from './dispute-manager';
+export {ChallengerAgent} from './dispute-agent';

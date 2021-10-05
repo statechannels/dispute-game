@@ -69,7 +69,7 @@ export function expectedNumOfLeaves(
 }
 
 /**
- * ChallengeManager prototypes the contract to be deployed on-chain.
+ * DisputeManager prototypes the contract to be deployed on-chain.
  * - Allows participants to split a range of states until the states provided are sequential.
  * - Allows a participant to prove fraud after splitting.
  * - Allows a participant to forfeit at any time.
@@ -84,11 +84,11 @@ export function expectedNumOfLeaves(
  *   |  |    |  |
  *  h0  h2  h4 null
  *
- * - An index of a hash is the position of the hash in the ChallengeManager merkle tree leaf list.
+ * - An index of a hash is the position of the hash in the DisputeManager merkle tree leaf list.
  * - A step of a hash is the position of the hash in the complete step array.
  * So indices of [h0, h2, h4] are [0, 1, 2]. The steps of [h0, h2, h4] are [0, 2, 4].
  */
-export class ChallengeManager {
+export class DisputeManager {
   public consensusStep = 0;
   public root: Hash;
   public loser = '';

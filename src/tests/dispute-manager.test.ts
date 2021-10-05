@@ -1,6 +1,6 @@
 import _ from 'lodash';
 
-import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
+import {DisputeManager, State, stepForIndex} from '../dispute-manager';
 import {DisputeGame} from '../dispute-game';
 import {generateWitness, hash, WitnessProof} from '../merkle';
 
@@ -46,9 +46,9 @@ describe('stepForIndex tests', () => {
  * End of utilities tests
  */
 
-test('Invalid ChallengeManager instanatiation', () => {
+test('Invalid DisputeManager instanatiation', () => {
   expect(() => {
-    new ChallengeManager(
+    new DisputeManager(
       fingerprints(correctStates, [0, 3, 4, 9]),
       state => ({root: state.root + 1}),
       fingerprint,
@@ -59,7 +59,7 @@ test('Invalid ChallengeManager instanatiation', () => {
   }).toThrow('Expected 3 number of states, recieved 4');
 
   expect(() => {
-    new ChallengeManager(
+    new DisputeManager(
       fingerprints(correctStates, [0, 4, 9]),
       state => ({root: state.root + 1}),
       fingerprint,
@@ -71,7 +71,7 @@ test('Invalid ChallengeManager instanatiation', () => {
 });
 
 test('Invalid splits, invalid detect fraud', () => {
-  const cm = new ChallengeManager(
+  const cm = new DisputeManager(
     fingerprints(correctStates, [0, 4, 9]),
     state => ({root: state.root + 1}),
     fingerprint,
@@ -164,7 +164,7 @@ test('Invalid splits, invalid detect fraud', () => {
  * - Tests invalid inputs
  */
 test('manual bisection', () => {
-  const cm = new ChallengeManager(
+  const cm = new DisputeManager(
     fingerprints(correctStates, [0, 4, 9]),
     state => ({root: state.root + 1}),
     fingerprint,
@@ -216,7 +216,7 @@ test('manual bisection', () => {
 });
 
 test('manual tri-section', () => {
-  const cm = new ChallengeManager(
+  const cm = new DisputeManager(
     fingerprints(correctStates, [0, 3, 6, 9]),
     state => ({root: state.root + 1}),
     fingerprint,
