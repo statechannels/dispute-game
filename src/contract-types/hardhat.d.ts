@@ -17,6 +17,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ChallengeManager__factory>;
     getContractFactory(
+      name: "DisputeManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.DisputeManager__factory>;
+    getContractFactory(
       name: "MerkleTestWrapper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MerkleTestWrapper__factory>;
