@@ -24,6 +24,7 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     "currentStatus()": FunctionFragment;
     "forfeit(string)": FunctionFragment;
     "fraudDetected(uint256,string)": FunctionFragment;
+    "fraudIndex()": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
 
@@ -35,6 +36,10 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "fraudDetected",
     values: [BigNumberish, string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "fraudIndex",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "split",
@@ -55,6 +60,7 @@ interface ChallengeManagerInterface extends ethers.utils.Interface {
     functionFragment: "fraudDetected",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "fraudIndex", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "split", data: BytesLike): Result;
 
   events: {};
@@ -117,6 +123,8 @@ export class ChallengeManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    fraudIndex(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -147,6 +155,8 @@ export class ChallengeManager extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
   split(
     _consensusProof: {
       witness: BytesLike;
@@ -173,6 +183,8 @@ export class ChallengeManager extends BaseContract {
       _mover: string,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
 
     split(
       _consensusProof: {
@@ -207,6 +219,8 @@ export class ChallengeManager extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
     split(
       _consensusProof: {
         witness: BytesLike;
@@ -237,6 +251,8 @@ export class ChallengeManager extends BaseContract {
       _mover: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
+
+    fraudIndex(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     split(
       _consensusProof: {

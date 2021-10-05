@@ -67,6 +67,9 @@ describe('Challenge Manager Contract', () => {
     await manager.fraudDetected(1, 'proposer');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
+
+    const fraudIndex = await manager.fraudIndex();
+    expect(fraudIndex).to.eq(1);
   });
 
   it('can perform a basic trisection', async () => {
@@ -88,6 +91,9 @@ describe('Challenge Manager Contract', () => {
     await manager.fraudDetected(1, 'challenger');
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
+
+    const fraudIndex = await manager.fraudIndex();
+    expect(fraudIndex).to.eq(1);
   });
 
   it('Invalid ChallengeManager instanatiation', async () => {

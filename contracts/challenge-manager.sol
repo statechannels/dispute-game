@@ -15,6 +15,7 @@ contract ChallengeManager {
     uint256 consensusIndex;
     string lastMover;
     ChallengeStatus public currentStatus;
+    uint256 public fraudIndex;
 
     constructor(
         bytes32[] memory _values,
@@ -51,6 +52,7 @@ contract ChallengeManager {
 
         require(currentLeafIndex + 1 == nextLeafIndex, 'Must be sibling nodes');
         currentStatus = ChallengeStatus.FraudDetected;
+        fraudIndex = index;
     }
 
     function split(
