@@ -1,4 +1,4 @@
-import {DisputeManager, ChallengerAgent} from '.';
+import {DisputeManager, DisputeAgent} from '.';
 import {State} from './dispute-manager';
 import {Hash} from './merkle';
 
@@ -24,13 +24,13 @@ export class GlobalContext {
 }
 
 export class DisputeGame {
-  private challenger: ChallengerAgent;
-  private proposer: ChallengerAgent;
+  private challenger: DisputeAgent;
+  private proposer: DisputeAgent;
   private globalContext = new GlobalContext();
 
   constructor(numSplits: number, challengerStates: State[], proposerStates: State[]) {
-    this.proposer = new ChallengerAgent('proposer', proposerStates, numSplits, this.globalContext);
-    this.challenger = new ChallengerAgent(
+    this.proposer = new DisputeAgent('proposer', proposerStates, numSplits, this.globalContext);
+    this.challenger = new DisputeAgent(
       'challenger',
       challengerStates,
       numSplits,
@@ -38,7 +38,7 @@ export class DisputeGame {
     );
   }
 
-  private getActor(): ChallengerAgent {
+  private getActor(): DisputeAgent {
     if (this.globalContext.getValidDisputeManager().lastMover === 'challenger') {
       return this.proposer;
     }
