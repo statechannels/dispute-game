@@ -1,67 +1,56 @@
-import {DisputeManager, DisputeAgent} from '.';
+import {BigNumberish, BytesLike} from 'ethers';
+import {DisputeAgent} from '.';
+
+import {ChainContext, DisputeManagerInterface} from './dispute-agent';
 import {State} from './dispute-manager';
-import {Hash} from './merkle';
+import {hash, Hash} from './merkle';
 
-/**
- * Global context is the chain state.
- */
-export class GlobalContext {
-  /**
-   * The DisputeManager mimics the on-chain contract.
-   * It can be 'deployed' and its state can be inspected.
-   */
-  public disputeManager: DisputeManager | null = null;
-  public deployDisputeManager(cm: DisputeManager): void {
-    this.disputeManager = cm;
-  }
-
-  public getValidDisputeManager(): DisputeManager {
-    if (!this.disputeManager) {
-      throw new Error('Expected a non-null DisputeManager');
-    }
-    return this.disputeManager;
-  }
+export class MockChainContext implements ChainContext {
+  deploy(
+    hashes: Hash[],
+    numSteps: BigNumberish,
+    lastMover: string,
+    splitFactor: BigNumberish
+  ): Promise<void> {}
 }
 
 export class DisputeGame {
-  private challenger: DisputeAgent;
-  private proposer: DisputeAgent;
-  private globalContext = new GlobalContext();
-
-  constructor(numSplits: number, challengerStates: State[], proposerStates: State[]) {
-    this.proposer = new DisputeAgent('proposer', proposerStates, numSplits, this.globalContext);
-    this.challenger = new DisputeAgent(
-      'challenger',
-      challengerStates,
+  public static async create(
+    numSplits: number,
+    challengerStates: State[],
+    proposerStates: State[],
+    chainContext: ChainContext
+  ): Promise<DisputeGame> {
+    const proposer = await DisputeAgent.create(
+      'proposer',
+      proposerStates.map(s => hash(s.root.toString())),
       numSplits,
-      this.globalContext
+      chainContext
     );
+    const challenger = await DisputeAgent.create(
+      'challenger',
+      challengerStates.map(s => hash(s.root.toString())),
+      numSplits,
+      chainContext
+    );
+    return new DisputeGame(numSplits, challenger, proposer, chainContext);
   }
+  constructor(
+    numSplits: number,
+    private challenger: DisputeAgent,
+    private proposer: DisputeAgent,
+    private chainContext: ChainContext
+  ) {}
 
-  private getActor(): DisputeAgent {
-    if (this.globalContext.getValidDisputeManager().lastMover === 'challenger') {
+  private async getActor(): Promise<DisputeAgent> {
+    const lastMover = await this.chainContext.disputeManager.lastMover();
+    if (lastMover === 'challenger') {
       return this.proposer;
     }
     return this.challenger;
   }
 
-  public get lastMover(): string {
-    return this.globalContext.getValidDisputeManager().lastMover;
-  }
-
-  public get loser(): string {
-    return this.globalContext.getValidDisputeManager().loser;
-  }
-
-  public runDispute(): {detectedFraud: boolean; states: Hash[]} {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      if (!this.getActor().split()) {
-        return {
-          detectedFraud: this.getActor().proveFraudOrForfeit(),
-          states: this.globalContext.getValidDisputeManager().lastCalldata
-        };
-      }
-    }
+  public async getLastMover(): Promise<string> {
+    return this.chainContext.disputeManager.lastMover();
   }
 }

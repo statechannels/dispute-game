@@ -30,11 +30,12 @@
   "dependencies": {
     "ethers": "^5.0.0",
     "js-sha3": "^0.8.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "rxjs": "^7.3.1"
   },
   "scripts": {
     "test": "jest",
-    "test:contract" :"yarn hardhat test",
+    "test:contract": "yarn hardhat test",
     "build": "yarn tsc --noEmit",
     "lint": "eslint \"*/**/*.ts\" --max-warnings=0"
   }

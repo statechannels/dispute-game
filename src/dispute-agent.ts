@@ -1,120 +1,153 @@
-import {DisputeManager, expectedNumOfLeaves, State, stepForIndex} from './dispute-manager';
-import {fingerprint} from './tests/dispute-manager.test';
-import {generateWitness, WitnessProof} from './merkle';
-import {GlobalContext} from './dispute-game';
+import {expectedNumOfLeaves, stepForIndex} from './dispute-manager';
+
+import {generateWitness, Hash, WitnessProof} from './merkle';
+
+import {DisputeManager, DisputeManager__factory} from './contract-types';
+import {BigNumberish} from 'ethers';
+
+enum ChallengeStatus {
+  InProgress = 0,
+  FraudDetected = 1,
+  Forfeited = 2
+}
 
 type Identity = 'challenger' | 'proposer';
+export type DisputeManagerInterface = Pick<
+  DisputeManager,
+  | 'split'
+  | 'claimFraud'
+  | 'currentStatus'
+  | 'forfeit'
+  | 'fraudIndex'
+  | 'canSplitFurther'
+  | 'getLeafIndex'
+  | 'lastMover'
+>;
 
+type DisputeManagerEvent = {type: 'split'; hashes: Hash[]};
+type DisputeManagerListener = (event: DisputeManagerEvent) => Promise<void>;
+
+export type ChainContext = {
+  registerListener(listener: DisputeManagerListener): void;
+  deploy: (
+    hashes: Hash[],
+    numSteps: BigNumberish,
+    lastMover: string,
+    splitFactor: BigNumberish
+  ) => Promise<void>;
+  deployed: boolean;
+  disputeManager: DisputeManagerInterface;
+};
 /**
  * The DisputeAgent is a dispute game participant. The agent is initialized with a set of states.
  * The agent uses the states to take turns in the dispute game.
  */
 export class DisputeAgent {
-  private dm: DisputeManager;
+  public static async create(
+    identity: Identity,
+    hashes: Hash[],
+    numSplits: number,
+    chainContext: ChainContext
+  ): Promise<DisputeAgent> {
+    if (!chainContext.deployed) {
+      const initialStates = [];
+      for (let i = 0; i < expectedNumOfLeaves(0, hashes.length - 1, numSplits); i++) {
+        const index = i === 0 ? 0 : stepForIndex(i, 0, hashes.length - 1, numSplits);
+        initialStates.push(hashes[index]);
+      }
+
+      await chainContext.deploy(
+        initialStates,
+        hashes.length - 1,
+
+        'proposer',
+
+        numSplits
+      );
+    }
+    return new DisputeAgent(identity, hashes, numSplits, chainContext.disputeManager);
+  }
+
   /**
    * DisputeAgent constructor deploys the ChallengerManager if needed
    * @param identity The identifier of the participant.
-   * @param states  That the participant believes are correct.
+   * @param hashes  That the participant believes are correct.
    * @param numSplits After experimentation to find the optimal split number, this will likely be a constant
    * @param globalContext The blockchain context
    */
-  constructor(
+  private constructor(
     private identity: Identity,
-    private states: State[],
-    numSplits: number,
-    globalContext: GlobalContext
-  ) {
-    if (!globalContext.disputeManager) {
-      const initialStates = [];
-      for (let i = 0; i < expectedNumOfLeaves(0, states.length - 1, numSplits); i++) {
-        const index = i === 0 ? 0 : stepForIndex(i, 0, states.length - 1, numSplits);
-        initialStates.push(states[index]);
-      }
+    private hashes: Hash[],
+    private numSplits: number,
+    private dm: DisputeManagerInterface
+  ) {}
 
-      globalContext.deployDisputeManager(
-        new DisputeManager(
-          initialStates.map(fingerprint),
-          state => ({root: state.root + 1}),
-          fingerprint,
-          'proposer',
-          this.states.length - 1,
-          numSplits
-        )
-      );
-    }
-    this.dm = globalContext.getValidDisputeManager();
-  }
-
-  private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
-    const disagreeWithIndex = this.firstDisputedIndex();
-    const consensusWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex - 1);
-    const disputedWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex);
+  private async createWitnesses(hashes: Hash[]): Promise<{
+    consensusWitness: WitnessProof;
+    disputedWitness: WitnessProof;
+  }> {
+    const disagreeWithIndex = await this.firstDisputedIndex(hashes);
+    const consensusWitness = generateWitness(hashes, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(hashes, disagreeWithIndex);
     return {consensusWitness, disputedWitness};
   }
 
-  private firstDisputedIndex(): number {
-    for (let i = 0; i < this.dm.lastCalldata.length; i++) {
-      const step = this.dm.stepForIndex(i);
-      if (this.dm.lastCalldata[i] !== fingerprint(this.states[step])) {
+  private async firstDisputedIndex(hashes: Hash[]): Promise<number> {
+    for (let i = 0; i < hashes.length; i++) {
+      const step = (await this.dm.getLeafIndex(i)).toNumber();
+      if (hashes[i] !== this.hashes[step]) {
         return i;
       }
     }
     throw 'Did not find disputed state';
   }
 
+  public async handleEvent(event: DisputeManagerEvent): Promise<void> {
+    switch (event.type) {
+      case 'split':
+        await this.handleSplit(event.hashes);
+        break;
+      default:
+        throw new Error('unreachable');
+    }
+  }
+
   /**
    * Take a turn splitting states
    * @returns whether a split was successful
    */
-  public split(): boolean {
-    if (this.dm.lastMover === this.identity) {
+  public async handleSplit(hashes: Hash[]): Promise<void> {
+    const lastMover = await this.dm.lastMover();
+    if (lastMover === this.identity) {
       throw new Error('It is not my turn!');
     }
-    if (!this.dm.canSplitFurther()) {
-      return false;
+    const canSplitFurther = await this.dm.canSplitFurther();
+
+    if (!canSplitFurther) {
+      const status: ChallengeStatus = await this.dm.currentStatus();
+      if (status === ChallengeStatus.InProgress) {
+        const fraudIndex = await this.firstDisputedIndex(hashes);
+        await this.dm.claimFraud(fraudIndex, this.identity);
+      } else {
+        throw new Error('The dispute game is already terminated.');
+      }
     }
 
-    const disagreeWithIndex = this.firstDisputedIndex();
-    const agreeWithStep = this.dm.stepForIndex(disagreeWithIndex - 1);
-    const disagreeWithStep = this.dm.stepForIndex(disagreeWithIndex);
-    const {consensusWitness, disputedWitness} = this.createWitnesses();
+    const disagreeWithIndex = await this.firstDisputedIndex(hashes);
+    const agreeWithStep = (await this.dm.getLeafIndex(disagreeWithIndex - 1)).toNumber();
+    const disagreeWithStep = (await this.dm.getLeafIndex(disagreeWithIndex)).toNumber();
+    const {consensusWitness, disputedWitness} = await this.createWitnesses(hashes);
 
-    let leaves: State[] = [];
+    let leaves: Hash[] = [];
 
-    for (
-      let i = 0;
-      i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.dm.numSplits);
-      i++
-    ) {
-      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.dm.numSplits);
-      leaves.push(this.states[index]);
+    for (let i = 0; i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.numSplits); i++) {
+      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.numSplits);
+      leaves.push(this.hashes[index]);
     }
 
     // We only want the leaves so we slice off the parent
     leaves = leaves.slice(1);
 
-    this.dm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.identity);
-
-    return true;
-  }
-
-  /**
-   * Attempt to prove fraud. If not able to prove fraud, forfeit the dispute game.
-   * @returns whether fraud was proven.
-   */
-  public proveFraudOrForfeit(): boolean {
-    const disagreeWithIndex = this.firstDisputedIndex();
-
-    const consensusWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex - 1);
-    const disputedWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex);
-    const detectedFraud = this.dm.detectFraud(
-      consensusWitness,
-      this.states[this.dm.stepForIndex(disagreeWithIndex - 1)],
-      disputedWitness
-    );
-    if (!detectedFraud) {
-      this.dm.forfeit(this.identity);
-    }
-    return detectedFraud;
+    await this.dm.split(consensusWitness, leaves, disputedWitness, this.identity);
   }
 }

@@ -21,13 +21,20 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface DisputeManagerInterface extends ethers.utils.Interface {
   functions: {
+    "canSplitFurther()": FunctionFragment;
     "claimFraud(uint256,string)": FunctionFragment;
     "currentStatus()": FunctionFragment;
     "forfeit(string)": FunctionFragment;
     "fraudIndex()": FunctionFragment;
+    "getLeafIndex(uint256)": FunctionFragment;
+    "lastMover()": FunctionFragment;
     "split(tuple,bytes32[],tuple,string)": FunctionFragment;
   };
 
+  encodeFunctionData(
+    functionFragment: "canSplitFurther",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "claimFraud",
     values: [BigNumberish, string]
@@ -42,6 +49,11 @@ interface DisputeManagerInterface extends ethers.utils.Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "getLeafIndex",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "lastMover", values?: undefined): string;
+  encodeFunctionData(
     functionFragment: "split",
     values: [
       { witness: BytesLike; index: BigNumberish; nodes: BytesLike[] },
@@ -51,6 +63,10 @@ interface DisputeManagerInterface extends ethers.utils.Interface {
     ]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "canSplitFurther",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "claimFraud", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "currentStatus",
@@ -58,6 +74,11 @@ interface DisputeManagerInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "forfeit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "fraudIndex", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getLeafIndex",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "lastMover", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "split", data: BytesLike): Result;
 
   events: {};
@@ -107,6 +128,8 @@ export class DisputeManager extends BaseContract {
   interface: DisputeManagerInterface;
 
   functions: {
+    canSplitFurther(overrides?: CallOverrides): Promise<[boolean]>;
+
     claimFraud(
       index: BigNumberish,
       _mover: string,
@@ -121,6 +144,13 @@ export class DisputeManager extends BaseContract {
     ): Promise<ContractTransaction>;
 
     fraudIndex(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    getLeafIndex(
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
+    lastMover(overrides?: CallOverrides): Promise<[string]>;
 
     split(
       _consensusProof: {
@@ -139,6 +169,8 @@ export class DisputeManager extends BaseContract {
     ): Promise<ContractTransaction>;
   };
 
+  canSplitFurther(overrides?: CallOverrides): Promise<boolean>;
+
   claimFraud(
     index: BigNumberish,
     _mover: string,
@@ -153,6 +185,13 @@ export class DisputeManager extends BaseContract {
   ): Promise<ContractTransaction>;
 
   fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
+  getLeafIndex(
+    index: BigNumberish,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
+  lastMover(overrides?: CallOverrides): Promise<string>;
 
   split(
     _consensusProof: {
@@ -171,6 +210,8 @@ export class DisputeManager extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    canSplitFurther(overrides?: CallOverrides): Promise<boolean>;
+
     claimFraud(
       index: BigNumberish,
       _mover: string,
@@ -182,6 +223,13 @@ export class DisputeManager extends BaseContract {
     forfeit(_mover: string, overrides?: CallOverrides): Promise<void>;
 
     fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getLeafIndex(
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    lastMover(overrides?: CallOverrides): Promise<string>;
 
     split(
       _consensusProof: {
@@ -203,6 +251,8 @@ export class DisputeManager extends BaseContract {
   filters: {};
 
   estimateGas: {
+    canSplitFurther(overrides?: CallOverrides): Promise<BigNumber>;
+
     claimFraud(
       index: BigNumberish,
       _mover: string,
@@ -217,6 +267,13 @@ export class DisputeManager extends BaseContract {
     ): Promise<BigNumber>;
 
     fraudIndex(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getLeafIndex(
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
+    lastMover(overrides?: CallOverrides): Promise<BigNumber>;
 
     split(
       _consensusProof: {
@@ -236,6 +293,8 @@ export class DisputeManager extends BaseContract {
   };
 
   populateTransaction: {
+    canSplitFurther(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     claimFraud(
       index: BigNumberish,
       _mover: string,
@@ -250,6 +309,13 @@ export class DisputeManager extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     fraudIndex(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getLeafIndex(
+      index: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    lastMover(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     split(
       _consensusProof: {

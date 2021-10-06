@@ -13,7 +13,7 @@ contract DisputeManager {
     uint256 splitFactor;
     uint256 disputedIndex;
     uint256 consensusIndex;
-    string lastMover;
+    string public lastMover;
     ChallengeStatus public currentStatus;
     uint256 public fraudIndex;
 
@@ -162,11 +162,11 @@ contract DisputeManager {
         }
     }
 
-    function getLeafIndex(uint256 index) internal view returns (uint256) {
+    function getLeafIndex(uint256 index) public view returns (uint256) {
         return MerkleUtils.getLeafIndex(index, consensusIndex, disputedIndex, splitFactor);
     }
 
-    function canSplitFurther() internal view returns (bool) {
+    function canSplitFurther() public view returns (bool) {
         return MerkleUtils.canSplitFurther(consensusIndex, disputedIndex, splitFactor);
     }
 }

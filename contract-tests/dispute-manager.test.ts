@@ -81,6 +81,7 @@ describe('Dispute Manager Contract', () => {
     );
     let status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.InProgress);
+
     await manager.split(
       generateWitness(getElements(correctHashes, [0, 3, 6, 9]), 1),
       getElements(incorrectHashes, [4, 5, 7]),
