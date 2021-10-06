@@ -6,13 +6,13 @@ import {GlobalContext} from './dispute-game';
 type Identity = 'challenger' | 'proposer';
 
 /**
- * The ChallengerAgent is a dispute game participant. The agent is initialized with a set of states.
+ * TheDisputeAgent is a dispute game participant. The agent is initialized with a set of states.
  * The agent uses the states to take turns in the dispute game.
  */
-export class ChallengerAgent {
+export class DisputeAgent {
   private cm: DisputeManager;
   /**
-   * ChallengerAgent constructor deploys the ChallengerManager if needed
+   *DisputeAgent constructor deploys the ChallengerManager if needed
    * @param identity The identifier of the participant.
    * @param states  That the participant believes are correct.
    * @param numSplits After experimentation to find the optimal split number, this will likely be a constant
