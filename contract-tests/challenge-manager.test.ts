@@ -1,10 +1,11 @@
 import {ethers} from 'hardhat';
 import {MerkleUtils} from '..//src/contract-types/MerkleUtils';
 
-import {expect} from 'chai';
+import {expect, use} from 'chai';
 import {generateWitness, hash, WitnessProof} from '../src/merkle';
 import _ from 'lodash';
 import {ContractFactory} from '@ethersproject/contracts';
+import {solidity} from 'ethereum-waffle';
 
 function getElements(array: string[], indices: number[]): string[] {
   return indices.map(i => array[i]);
@@ -15,6 +16,9 @@ enum ChallengeStatus {
   FraudDetected = 1,
   Forfeited = 2
 }
+
+// This allows us to use things like .to.be.revertedWith
+use(solidity);
 
 describe('Challenge Manager Contract', () => {
   let merkleUtils: MerkleUtils;
