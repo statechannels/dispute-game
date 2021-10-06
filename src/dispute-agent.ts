@@ -10,7 +10,7 @@ type Identity = 'challenger' | 'proposer';
  * The agent uses the states to take turns in the dispute game.
  */
 export class DisputeAgent {
-  private cm: DisputeManager;
+  private dm: DisputeManager;
   /**
    *DisputeAgent constructor deploys the ChallengerManager if needed
    * @param identity The identifier of the participant.
@@ -42,20 +42,20 @@ export class DisputeAgent {
         )
       );
     }
-    this.cm = globalContext.getValidDisputeManager();
+    this.dm = globalContext.getValidDisputeManager();
   }
 
   private createWitnesses(): {consensusWitness: WitnessProof; disputedWitness: WitnessProof} {
     const disagreeWithIndex = this.firstDisputedIndex();
-    const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
-    const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
+    const consensusWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex);
     return {consensusWitness, disputedWitness};
   }
 
   private firstDisputedIndex(): number {
-    for (let i = 0; i < this.cm.lastCalldata.length; i++) {
-      const step = this.cm.stepForIndex(i);
-      if (this.cm.lastCalldata[i] !== fingerprint(this.states[step])) {
+    for (let i = 0; i < this.dm.lastCalldata.length; i++) {
+      const step = this.dm.stepForIndex(i);
+      if (this.dm.lastCalldata[i] !== fingerprint(this.states[step])) {
         return i;
       }
     }
@@ -67,33 +67,33 @@ export class DisputeAgent {
    * @returns whether a split was successful
    */
   public split(): boolean {
-    if (this.cm.lastMover === this.identity) {
+    if (this.dm.lastMover === this.identity) {
       throw new Error('It is not my turn!');
     }
-    if (!this.cm.canSplitFurther()) {
+    if (!this.dm.canSplitFurther()) {
       return false;
     }
 
     const disagreeWithIndex = this.firstDisputedIndex();
-    const agreeWithStep = this.cm.stepForIndex(disagreeWithIndex - 1);
-    const disagreeWithStep = this.cm.stepForIndex(disagreeWithIndex);
+    const agreeWithStep = this.dm.stepForIndex(disagreeWithIndex - 1);
+    const disagreeWithStep = this.dm.stepForIndex(disagreeWithIndex);
     const {consensusWitness, disputedWitness} = this.createWitnesses();
 
     let leaves: State[] = [];
 
     for (
       let i = 0;
-      i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.cm.numSplits);
+      i < expectedNumOfLeaves(agreeWithStep, disagreeWithStep, this.dm.numSplits);
       i++
     ) {
-      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.cm.numSplits);
+      const index = stepForIndex(i, agreeWithStep, disagreeWithStep, this.dm.numSplits);
       leaves.push(this.states[index]);
     }
 
     // We only want the leaves so we slice off the parent
     leaves = leaves.slice(1);
 
-    this.cm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.identity);
+    this.dm.split(consensusWitness, leaves.map(fingerprint), disputedWitness, this.identity);
 
     return true;
   }
@@ -105,15 +105,15 @@ export class DisputeAgent {
   public proveFraudOrForfeit(): boolean {
     const disagreeWithIndex = this.firstDisputedIndex();
 
-    const consensusWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex - 1);
-    const disputedWitness = generateWitness(this.cm.lastCalldata, disagreeWithIndex);
-    const detectedFraud = this.cm.detectFraud(
+    const consensusWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex - 1);
+    const disputedWitness = generateWitness(this.dm.lastCalldata, disagreeWithIndex);
+    const detectedFraud = this.dm.detectFraud(
       consensusWitness,
-      this.states[this.cm.stepForIndex(disagreeWithIndex - 1)],
+      this.states[this.dm.stepForIndex(disagreeWithIndex - 1)],
       disputedWitness
     );
     if (!detectedFraud) {
-      this.cm.forfeit(this.identity);
+      this.dm.forfeit(this.identity);
     }
     return detectedFraud;
   }
