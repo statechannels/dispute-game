@@ -1,10 +1,9 @@
 import {ethers} from 'hardhat';
-import {MerkleUtils} from '..//src/contract-types/MerkleUtils';
 
 import {expect, use} from 'chai';
 import {generateWitness, hash, WitnessProof} from '../src/merkle';
 import _ from 'lodash';
-import {ContractFactory} from '@ethersproject/contracts';
+import {Contract, ContractFactory} from '@ethersproject/contracts';
 import {solidity} from 'ethereum-waffle';
 
 function getElements(array: string[], indices: number[]): string[] {
@@ -21,7 +20,7 @@ enum ChallengeStatus {
 use(solidity);
 
 describe('Challenge Manager Contract', () => {
-  let merkleUtils: MerkleUtils;
+  let merkleUtils: Contract;
   let challengeManagerFactory: ContractFactory;
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const correctHashes = correctStates.map(num => hash(num.toString()));

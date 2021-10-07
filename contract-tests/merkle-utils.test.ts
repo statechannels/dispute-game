@@ -3,13 +3,13 @@ import chai, {use} from 'chai';
 
 import {generateWitness, hash} from '../src/merkle';
 import _ from 'lodash';
-import {MerkleUtils, MerkleTestWrapper} from '../src/contract-types';
 import {solidity} from 'ethereum-waffle';
+import {Contract} from 'ethers';
 
 const {expect} = chai;
 
-let merkleUtils: MerkleUtils;
-let merkleTestWrapper: MerkleTestWrapper;
+let merkleUtils: Contract;
+let merkleTestWrapper: Contract;
 
 // This allows us to use things like .to.be.revertedWith
 use(solidity);

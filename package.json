@@ -18,7 +18,7 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-prettier": "^3.4.0",
     "ethereum-waffle": "^3.0.0",
-    "hardhat": "^2.6.4",
+    "hardhat": "^2.6.5",
     "jest": "^27.0.6",
     "mocha": "^9.1.2",
     "prettier": "^2.3.2",
@@ -34,7 +34,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test:contract" :"yarn hardhat test",
+    "test:contract": "yarn hardhat test",
     "build": "yarn tsc --noEmit",
     "lint": "eslint \"*/**/*.ts\" --max-warnings=0"
   }
