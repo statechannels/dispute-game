@@ -22,7 +22,6 @@ library MerkleUtils {
 
     /**
      * Calculate the number of leaves in a binary merkle tree
-
      */
     function expectedNumOfLeaves(
         uint256 loStep,
