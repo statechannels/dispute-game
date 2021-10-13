@@ -35,14 +35,14 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.InProgress;
     }
 
-    function forfeit(string calldata _mover) public {
+    function forfeit(string calldata _mover) external {
         if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
             revert('The mover cannot be the same as the last mover');
         }
         currentStatus = ChallengeStatus.Forfeited;
     }
 
-    function claimFraud(uint256 index, string calldata _mover) public {
+    function claimFraud(uint256 index, string calldata _mover) external {
         if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
             revert('The mover cannot be the same as the last mover');
         }
