@@ -15,7 +15,7 @@ enum Mover {
 
 contract ChallengeManager {
     bytes32 root;
-    uint256 splitFactor;
+    uint256 immutable splitFactor;
     uint256 disputedIndex;
     uint256 consensusIndex;
     Mover lastMover;
