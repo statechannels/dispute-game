@@ -16,6 +16,11 @@ enum ChallengeStatus {
   Forfeited = 2
 }
 
+enum Mover {
+  Challenger,
+  Responder
+}
+
 // This allows us to use things like .to.be.revertedWith
 use(solidity);
 
@@ -39,7 +44,7 @@ describe('Challenge Manager Contract', () => {
     const manager = await challengeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
-      'challenger',
+      Mover.Challenger,
       2
     );
     let status = await manager.currentStatus();
@@ -48,14 +53,14 @@ describe('Challenge Manager Contract', () => {
       generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
       getElements(incorrectHashes, [6, 9]),
       generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-      'proposer'
+      Mover.Responder
     );
 
     await manager.split(
       generateWitness(getElements(incorrectHashes, [4, 6, 9]), 1),
       getElements(correctHashes, [5, 6]),
       generateWitness(getElements(incorrectHashes, [4, 6, 9]), 2),
-      'challenger'
+      Mover.Challenger
     );
 
     await expect(
@@ -63,11 +68,11 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(incorrectHashes, [6, 9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.be.revertedWith('States cannot be split further');
 
-    await manager.claimFraud(1, 'proposer');
+    await manager.claimFraud(1, Mover.Responder);
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
 
@@ -79,7 +84,7 @@ describe('Challenge Manager Contract', () => {
     const manager = await challengeManagerFactory.deploy(
       getElements(correctHashes, [0, 3, 6, 9]),
       9,
-      'challenger',
+      Mover.Challenger,
       3
     );
     let status = await manager.currentStatus();
@@ -88,10 +93,10 @@ describe('Challenge Manager Contract', () => {
       generateWitness(getElements(correctHashes, [0, 3, 6, 9]), 1),
       getElements(incorrectHashes, [4, 5, 7]),
       generateWitness(getElements(correctHashes, [0, 3, 6, 9]), 2),
-      'proposer'
+      Mover.Responder
     );
 
-    await manager.claimFraud(1, 'challenger');
+    await manager.claimFraud(1, Mover.Challenger);
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.FraudDetected);
 
@@ -101,11 +106,16 @@ describe('Challenge Manager Contract', () => {
 
   it('Invalid ChallengeManager instanatiation', async () => {
     expect(
-      challengeManagerFactory.deploy(getElements(correctHashes, [0, 3, 4, 9]), 9, 'challenger', 2)
+      challengeManagerFactory.deploy(
+        getElements(correctHashes, [0, 3, 4, 9]),
+        9,
+        Mover.Challenger,
+        2
+      )
     ).to.revertedWith('There must be k+1 values');
 
     expect(
-      challengeManagerFactory.deploy(getElements(correctHashes, [0, 5, 9]), 9, 'challenger', 1)
+      challengeManagerFactory.deploy(getElements(correctHashes, [0, 5, 9]), 9, Mover.Challenger, 1)
     ).to.revertedWith('The splitting factor must be above 1');
   });
 
@@ -113,7 +123,7 @@ describe('Challenge Manager Contract', () => {
     const manager = await challengeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
-      'challenger',
+      Mover.Challenger,
       2
     );
 
@@ -122,7 +132,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
         getElements(correctHashes, [9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('Consensus witness cannot be the last stored state');
 
@@ -131,7 +141,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
         getElements(correctHashes, [9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'challenger'
+        Mover.Challenger
       )
     ).to.revertedWith('The mover cannot be the same as the last mover');
 
@@ -144,7 +154,7 @@ describe('Challenge Manager Contract', () => {
         nonLeafWitness,
         getElements(correctHashes, [9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('The witness provided is not for a leaf node');
 
@@ -153,7 +163,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [5, 6, 7]), 1),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('Invalid consensus witness proof');
 
@@ -162,7 +172,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [5, 6, 7]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('Invalid dispute witness proof');
 
@@ -171,7 +181,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 0),
         getElements(correctHashes, [2, 4]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('Disputed state hash must be the next leaf after consensus state hash');
 
@@ -180,7 +190,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(correctHashes, [6, 9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('The last state supplied must differ from the disputed witness');
 
@@ -189,11 +199,11 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 0),
         getElements(correctHashes, [2, 3, 5]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('Incorrect amount of state hashes');
 
-    await expect(manager.claimFraud(1, 'challenger')).to.revertedWith(
+    await expect(manager.claimFraud(1, Mover.Challenger)).to.revertedWith(
       'The mover cannot be the same as the last mover'
     );
   });
@@ -201,13 +211,13 @@ describe('Challenge Manager Contract', () => {
     const manager = await challengeManagerFactory.deploy(
       getElements(correctHashes, [0, 4, 9]),
       9,
-      'challenger',
+      Mover.Challenger,
       2
     );
     let status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.InProgress);
 
-    await manager.forfeit('proposer');
+    await manager.forfeit(Mover.Responder);
     status = await manager.currentStatus();
     expect(status).to.eq(ChallengeStatus.Forfeited);
     expect(
@@ -215,7 +225,7 @@ describe('Challenge Manager Contract', () => {
         generateWitness(getElements(correctHashes, [0, 4, 9]), 1),
         getElements(incorrectHashes, [6, 9]),
         generateWitness(getElements(correctHashes, [0, 4, 9]), 2),
-        'proposer'
+        Mover.Responder
       )
     ).to.revertedWith('The challenge is already complete');
   });
