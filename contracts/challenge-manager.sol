@@ -8,19 +8,24 @@ enum ChallengeStatus {
     Forfeited
 }
 
+enum Mover {
+    Challenger,
+    Proposer
+}
+
 contract ChallengeManager {
     bytes32 root;
-    uint256 splitFactor;
+    uint256 immutable splitFactor;
     uint256 disputedIndex;
     uint256 consensusIndex;
-    string lastMover;
+    Mover lastMover;
     ChallengeStatus public currentStatus;
     uint256 public fraudIndex;
 
     constructor(
         bytes32[] memory _values,
         uint256 _numSteps,
-        string memory _lastMover,
+        Mover _lastMover,
         uint256 _splitFactor
     ) {
         root = MerkleUtils.generateRoot(_values);
@@ -35,15 +40,15 @@ contract ChallengeManager {
         currentStatus = ChallengeStatus.InProgress;
     }
 
-    function forfeit(string calldata _mover) public {
-        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+    function forfeit(Mover _mover) external {
+        if (_mover== lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         currentStatus = ChallengeStatus.Forfeited;
     }
 
-    function claimFraud(uint256 index, string calldata _mover) public {
-        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+    function claimFraud(uint256 index, Mover _mover) external {
+        if (_mover== lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         uint256 nextLeafIndex = getLeafIndex(index + 1);
@@ -59,9 +64,9 @@ contract ChallengeManager {
         WitnessProof calldata _consensusProof,
         bytes32[] calldata _hashes,
         WitnessProof calldata _disputedProof,
-        string calldata _mover
+        Mover _mover
     ) external {
-        if (keccak256(abi.encode(_mover)) == keccak256(abi.encode(lastMover))) {
+        if (_mover== lastMover) {
             revert('The mover cannot be the same as the last mover');
         }
         if (!canSplitFurther()) {

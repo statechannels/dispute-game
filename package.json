@@ -19,6 +19,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "ethereum-waffle": "^3.0.0",
     "hardhat": "^2.6.5",
+    "hardhat-gas-reporter": "^1.0.4",
     "jest": "^27.0.6",
     "mocha": "^9.1.2",
     "prettier": "^2.3.2",
