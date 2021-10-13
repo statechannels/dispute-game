@@ -1,7 +1,6 @@
-import {sha3_256} from 'js-sha3';
-import _ from 'lodash';
+import {ethers} from 'ethers';
 
-import MerkleTree, {Proof as MerkleToolsProof} from 'merkle-tools';
+import _ from 'lodash';
 
 export type Hash = string;
 export type WitnessProof = {
@@ -14,60 +13,85 @@ export type WitnessProof = {
 function padLeaves(hashes: Hash[]) {
   const paddingLength = Math.pow(2, Math.ceil(Math.log2(hashes.length))) - hashes.length;
 
-  const padding = _.range(paddingLength).map(_i => sha3_256('0'));
+  const padding = _.range(paddingLength).map(_i =>
+    ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint256'], [0x0]))
+  );
+
   return [...hashes, ...padding];
 }
 
-export function generateWitness(hashes: Hash[], index: number): WitnessProof {
-  const tree = new MerkleTree({hashType: 'SHA3-256'});
-  tree.addLeaves(padLeaves(hashes), false);
-  tree.makeTree();
+export function hash(value: string): Hash {
+  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(value));
+}
 
-  const root = tree.getMerkleRoot()?.toString('hex');
-  const witness = tree.getLeaf(index)?.toString('hex');
-  const proof = tree.getProof(index, false);
-
-  if (!root || !witness || !proof) {
-    throw new Error('Invalid node or proof!');
-  }
-
-  const nodes = proof.map(p => ('left' in p ? p.left : p.right));
-
-  return {witness, nodes, index};
+export function hashChildren(firstChild: Hash, secondChild: Hash): Hash {
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(['bytes32', 'bytes32'], [firstChild, secondChild])
+  );
 }
 
 export function validateWitness(witnessProof: WitnessProof, root: string): boolean {
-  const tree = new MerkleTree({hashType: 'SHA3-256'});
-  const {index, nodes, witness} = witnessProof;
+  const {nodes, witness} = witnessProof;
 
-  const convertedProof = generateMerkleToolsProof(nodes, index);
-  // TODO: The MerkleTools library isn't typed properly so we force a cast here
-  return tree.validateProof(convertedProof as unknown as MerkleToolsProof<string>, witness, root);
-}
-
-function generateMerkleToolsProof(nodes: Hash[], index: number): MerkleToolsProof<string>[] {
-  const merkleToolsProof: MerkleToolsProof<string>[] = [];
-
+  let index = witnessProof.index;
+  let hash = witness;
   for (let i = 0; i < nodes.length; i++) {
     if (index % 2 !== 0) {
-      merkleToolsProof.push({left: nodes[i]});
+      hash = hashChildren(nodes[i], hash);
     } else {
-      merkleToolsProof.push({right: nodes[i]});
+      hash = hashChildren(hash, nodes[i]);
     }
 
     index = Math.floor(index / 2);
   }
 
-  return merkleToolsProof;
+  return root === hash;
 }
 
-export function generateRoot(stateHashes: Hash[]): Hash {
-  const tree = new MerkleTree({hashType: 'SHA3-256'});
-  tree.addLeaves(padLeaves(stateHashes), false);
-  tree.makeTree();
-  const root = tree.getMerkleRoot();
-  if (!root) {
-    throw new Error('Could not calculate root');
+export function generateWitness(stateHashes: Hash[], index: number): WitnessProof {
+  const witness = stateHashes[index];
+  const originalIndex = index;
+  const paddedLeaves = padLeaves(stateHashes);
+  const nodes: Hash[] = [];
+  const treeDepth = Math.floor(Math.log2(paddedLeaves.length));
+
+  let currentNode = witness;
+  for (let depth = 0; depth < treeDepth; depth++) {
+    const offset = 2 ** depth;
+
+    for (let i = 0; i < paddedLeaves.length; i = i + 2 * offset) {
+      // if this is our current node want to get it's sibling
+      // We then update our current node so we can keep tracking up the tree
+      if (paddedLeaves[i + offset] === currentNode) {
+        nodes.push(paddedLeaves[i]);
+        currentNode = hashChildren(paddedLeaves[i], paddedLeaves[i + offset]);
+      } else if (paddedLeaves[i] === currentNode) {
+        nodes.push(paddedLeaves[i + offset]);
+        currentNode = hashChildren(paddedLeaves[i], paddedLeaves[i + offset]);
+      }
+
+      const parentValue = hashChildren(paddedLeaves[i], paddedLeaves[i + offset]);
+
+      paddedLeaves[i] = parentValue;
+    }
+
+    index = Math.floor(index / 2);
   }
-  return root.toString('hex');
+
+  return {nodes, witness, index: originalIndex};
+}
+export function generateRoot(stateHashes: Hash[]): Hash {
+  const paddedLeaves = padLeaves(stateHashes);
+  const treeDepth = Math.floor(Math.log2(paddedLeaves.length));
+  for (let depth = 0; depth < treeDepth; depth++) {
+    const offset = 2 ** depth;
+
+    for (let index = 0; index < paddedLeaves.length; index = index + 2 * offset) {
+      const parentValue = hashChildren(paddedLeaves[index], paddedLeaves[index + offset]);
+
+      paddedLeaves[index] = parentValue;
+    }
+  }
+
+  return paddedLeaves[0];
 }

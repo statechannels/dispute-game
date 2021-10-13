@@ -1,9 +1,8 @@
 import _ from 'lodash';
-import {sha3_256} from 'js-sha3';
 
 import {ChallengeManager, State, stepForIndex} from '../challenge-manager';
 import {DisputeGame} from '../dispute-game';
-import {generateWitness, WitnessProof} from '../merkle';
+import {generateWitness, hash, WitnessProof} from '../merkle';
 
 const challengerId = 'challenger' as const;
 const proposerId = 'proposer' as const;
@@ -19,7 +18,7 @@ function fingerprints(values: number[], indices: number[]) {
   return states(values, indices).map(fingerprint);
 }
 
-export const fingerprint = (state: State): string => sha3_256(state.root.toString());
+export const fingerprint = (state: State): string => hash(state.root.toString());
 
 /**
  * Utilities tests

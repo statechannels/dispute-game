@@ -3,12 +3,20 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   /**
+   * We run the contract tests through hardhat (using mocha) so we want jest to avoid them
+   */
+  testPathIgnorePatterns: ['contract-tests'],
+  /**
    * Only collect coverage for ChallengeManager and utilities used by ChallengeManager
    * merkle.ts IS a utility used by challenge manager. But this utility is fairly specific
    *  to merkle-tools dependency. So it is ignored for now.
    */
   collectCoverage: true,
-  collectCoverageFrom: ['src/**/*.{js,ts}', '!src/{index,merkle,challenger-agent,dispute-game}.ts'],
+  collectCoverageFrom: [
+    'src/**/*.{js,ts}',
+    '!src/contract-types/**',
+    '!src/{index,merkle,challenger-agent,dispute-game}.ts'
+  ],
   coverageThreshold: {
     global: {
       branches: 100,
