@@ -1,7 +1,7 @@
 import {ethers} from 'hardhat';
 import chai, {use} from 'chai';
 
-import {generateWitness, hash} from '../src/merkle';
+import {generateWitness, hash} from '../../ts-prototype/merkle';
 import _ from 'lodash';
 import {solidity} from 'ethereum-waffle';
 import {Contract} from 'ethers';
