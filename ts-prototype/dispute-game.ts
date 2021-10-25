@@ -1,6 +1,6 @@
 import {DisputeManager, DisputeAgent} from '.';
 import {State} from './dispute-manager';
-import {Hash} from '../merkle';
+import {Hash} from './merkle';
 
 /**
  * Global context is the chain state.

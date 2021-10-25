@@ -22,7 +22,7 @@ const config: HardhatUserConfig = {
     ]
   },
   typechain: {
-    outDir: 'src/contract-types',
+    outDir: 'sol-prototype/contract-types',
     target: 'ethers-v5'
   }
 };
