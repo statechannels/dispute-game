@@ -1,6 +1,6 @@
 import {DisputeManager, expectedNumOfLeaves, State, stepForIndex} from './dispute-manager';
-import {fingerprint} from '../tests/dispute-manager.test';
-import {generateWitness, WitnessProof} from '../merkle';
+import {fingerprint} from './tests/dispute-manager.test';
+import {generateWitness, WitnessProof} from './merkle';
 import {GlobalContext} from './dispute-game';
 
 type Identity = 'challenger' | 'proposer';

@@ -3,7 +3,6 @@ import {ethers} from 'ethers';
 import _ from 'lodash';
 
 import {generateRoot, generateWitness, validateWitness} from '../merkle';
-
 describe('validateWitness checks', () => {
   test('it returns false  when the proof is invalid for the root', () => {
     const validHashes = ['a', 'b', 'c'].map(val => ethers.utils.keccak256(ethers.utils.id(val)));
