@@ -37,6 +37,7 @@
     "test:ts": "jest",
     "test:sol": "yarn hardhat test",
     "build": "yarn tsc --noEmit",
-    "lint": "eslint \"*/**/*.ts\" --max-warnings=0"
+    "lint": "eslint \"*/**/*.ts\" --max-warnings=0",
+    "typechain": "yarn hardhat typechain"
   }
 }
