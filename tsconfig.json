@@ -1,5 +1,5 @@
 {
-  "include": ["sol-prototype/contract-types", "ts-prototype"],
+  "include": ["ts-prototype"],
   "exclude": ["**/node_modules"],
   "compilerOptions": {
     // For default values, see here:
