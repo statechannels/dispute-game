@@ -1,8 +1,7 @@
 import {ethers} from 'hardhat';
-import {MerkleUtils} from '../src/contract-types/MerkleUtils';
 
 import {expect, use} from 'chai';
-import {generateWitness, hash, WitnessProof} from '../src/merkle';
+import {generateWitness, hash, WitnessProof} from '../../ts-prototype/merkle';
 import _ from 'lodash';
 import {ContractFactory} from '@ethersproject/contracts';
 import {solidity} from 'ethereum-waffle';
@@ -26,7 +25,6 @@ enum Mover {
 use(solidity);
 
 describe('Dispute Manager Contract', () => {
-  let merkleUtils: MerkleUtils;
   let disputeManagerFactory: ContractFactory;
   const correctStates = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const correctHashes = correctStates.map(num => hash(num.toString()));
@@ -34,7 +32,7 @@ describe('Dispute Manager Contract', () => {
   const incorrectHashes = incorrectStates.map(num => hash(num.toString()));
 
   beforeEach(async () => {
-    merkleUtils = await (await ethers.getContractFactory('MerkleUtils')).deploy();
+    const merkleUtils = await (await ethers.getContractFactory('MerkleUtils')).deploy();
 
     disputeManagerFactory = await ethers.getContractFactory('DisputeManager', {
       libraries: {MerkleUtils: merkleUtils.address}
