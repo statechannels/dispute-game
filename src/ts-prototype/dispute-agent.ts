@@ -1,9 +1,12 @@
 import {DisputeManager, expectedNumOfLeaves, State, stepForIndex} from './dispute-manager';
-import {fingerprint} from './tests/dispute-manager.test';
-import {generateWitness, WitnessProof} from './merkle';
+import {fingerprint} from '../tests/dispute-manager.test';
+import {generateWitness, WitnessProof} from '../merkle';
 import {GlobalContext} from './dispute-game';
 
 type Identity = 'challenger' | 'proposer';
+
+//TODO: This is a prototype of the dispute agent that works with the typescript protoype of the contract
+// This needs to be updated to work with the solidity version of the contract.
 
 /**
  * The DisputeAgent is a dispute game participant. The agent is initialized with a set of states.

@@ -1,4 +1,4 @@
-import {generateRoot, Hash, validateWitness, WitnessProof} from './merkle';
+import {generateRoot, Hash, validateWitness, WitnessProof} from '../merkle';
 
 type Bytes32 = number;
 
