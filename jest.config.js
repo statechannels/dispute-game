@@ -5,7 +5,7 @@ module.exports = {
   /**
    * We run the contract tests through hardhat (using mocha) so we want jest to avoid them
    */
-  testPathIgnorePatterns: ['contract-tests'],
+  testPathIgnorePatterns: ['sol-prototype'],
   /**
    * Only collect coverage for DisputeManager and utilities used by DisputeManager
    * merkle.ts IS a utility used by challenge manager. But this utility is fairly specific
@@ -13,9 +13,9 @@ module.exports = {
    */
   collectCoverage: true,
   collectCoverageFrom: [
-    'src/**/*.{js,ts}',
-    '!src/contract-types/**',
-    '!src/{index,merkle,dispute-agent,dispute-game}.ts'
+    'ts-prototype/**/*.{js,ts}',
+    '!sol-prototype/**',
+    '!ts-prototype/{index,merkle,dispute-agent,dispute-game}.ts'
   ],
   coverageThreshold: {
     global: {
