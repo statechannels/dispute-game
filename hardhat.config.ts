@@ -6,7 +6,7 @@ import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 
 const config: HardhatUserConfig = {
-  paths: {tests: 'contract-tests'},
+  paths: {tests: 'sol-prototype/tests', sources: 'sol-prototype'},
   defaultNetwork: 'hardhat',
   solidity: {
     compilers: [
